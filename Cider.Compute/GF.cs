@@ -12,33 +12,35 @@ namespace Cider.Math
         /// <summary>
         /// 不可约多项式字典
         /// </summary>
-        public static readonly Dictionary<uint, ulong> PrimitiveDict;
+        public static Dictionary<uint, ulong> PrimitiveDict { get; }
 
         /// <summary>
         /// 比特数
         /// </summary>
-        public uint BitNumber { get; protected set; }
+        public uint BitLenght { get; protected set; }
 
         static GF()
         {
-            PrimitiveDict = new Dictionary<uint, ulong>();
-            PrimitiveDict[4] = 0b10011;     // x^4 + x + 1
-            PrimitiveDict[8] = (1UL << 8) | 0b11101;  // x^8 + x^4 + x^3 + x^2 + 1
-            PrimitiveDict[16] = (1UL << 16) | (1 << 12) | 0b1011;     // x^16 + x^12 + x^3 + x + 1
-            PrimitiveDict[32] = (1UL << 32) | (1 << 22) | 0b111;      // x^32 + x^22 + x^2 + x + 1 
-            PrimitiveDict[64] = (1UL << 64) | 0b11011;  // x^64 + x^4 + x^3 + x + 1
+            PrimitiveDict = new Dictionary<uint, ulong>
+            {
+                [4] = 0b10011,     // x^4 + x + 1
+                [8] = (1UL << 8) | 0b11101,  // x^8 + x^4 + x^3 + x^2 + 1
+                [16] = (1UL << 16) | (1 << 12) | 0b1011,     // x^16 + x^12 + x^3 + x + 1
+                [32] = (1UL << 32) | (1 << 22) | 0b111,      // x^32 + x^22 + x^2 + x + 1 
+                [64] = (1UL << 64) | 0b11011  // x^64 + x^4 + x^3 + x + 1
+            };
         }
 
         public GF(uint bitnum)
         {
             dat = 0x0;
-            BitNumber = bitnum;
+            BitLenght = bitnum;
         }
 
         public GF(uint bitnum, ulong b)
         {
             dat = b;
-            BitNumber = bitnum;
+            BitLenght = bitnum;
         }
 
         public static implicit operator GF(byte b)
@@ -83,10 +85,10 @@ namespace Cider.Math
 
         public static GF Add(GF left, GF right)
         {
-            if (left.BitNumber != right.BitNumber)
+            if (left.BitLenght != right.BitLenght)
                 throw new ArgumentException("The left and right is not in the same Galois Field");
             ulong res = left.dat ^ right.dat;
-            return new GF(left.BitNumber, res);
+            return new GF(left.BitLenght, res);
         }
 
         public static GF operator+(GF left, GF right)
@@ -101,10 +103,10 @@ namespace Cider.Math
 
         public static GF Multify(GF left, GF right)
         {
-            if (left.BitNumber != right.BitNumber)
+            if (left.BitLenght != right.BitLenght)
                 throw new ArgumentException("The left and right is not same Field");
             ulong l_bits = left.dat, r_bits = right.dat;
-            uint len = left.BitNumber;
+            uint len = left.BitLenght;
             ulong result = 0UL;
             // 使用快速平方乘算法计算left*right
             while (r_bits != 0)

@@ -111,15 +111,20 @@ namespace Cider.Math
         /// <exception cref="ArgumentException">行列数不相等抛出异常</exception>
         public Matrix<T> Add(Matrix<T> matrix)
         {
-            if (matrix.Row == this.Row && matrix.Column == this.Column)
-            {
-                Matrix<T> mat = new(Row, Column);
+            return Add(this, matrix);
+        }
 
-                for (ulong i = 0; i < Row; i++)
+        public static Matrix<T> Add(Matrix<T>left, Matrix<T> right)
+        {
+            if (left.Row == right.Row && left.Column == right.Column)
+            {
+                Matrix<T> mat = new(left.Row, left.Column);
+
+                for (ulong i = 0; i < left.Row; i++)
                 {
-                    for (ulong j = 0; j < Column; j++)
+                    for (ulong j = 0; j < left.Column; j++)
                     {
-                        mat.Send(i, j, matrix.Locate(i, j).Add(_mat[i, j]));
+                        mat.Send(i, j, right.Locate(i, j).Add(left._mat[i, j]));
                     }
                 }
 
@@ -133,7 +138,7 @@ namespace Cider.Math
 
         public static Matrix<T> operator+(Matrix<T> left, Matrix<T> right)
         {
-            return left.Add(right);
+            return Add(left, right);
         }
 
         public object Multify(object value)
@@ -144,7 +149,7 @@ namespace Cider.Math
             }
             if (value is Matrix<T> matrix)
             {
-                return Multify(matrix);
+                return Multify(this, matrix);
             }
             else
             {
@@ -155,22 +160,35 @@ namespace Cider.Math
         /// <summary>
         /// 矩阵乘法
         /// </summary>
-        /// <param name="matrix"></param>
+        /// <param name="left">乘法左元素</param>
+        /// <param name="right">乘法右元素</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         public Matrix<T> Multify(Matrix<T> matrix)
         {
-            if (Column == matrix.Row)
+            return Multify(this, matrix);
+        }
+
+        /// <summary>
+        /// 矩阵乘法
+        /// </summary>
+        /// <param name="left">乘法左元素</param>
+        /// <param name="right">乘法右元素</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static Matrix<T> Multify(Matrix<T> left, Matrix<T> right)
+        {
+            if (left.Column == right.Row)
             {
-                var mat = new Matrix<T>(Row, matrix.Column);
-                for (ulong i = 0; i < Row; i++)
+                var mat = new Matrix<T>(left.Row, right.Column);
+                for (ulong i = 0; i < left.Row; i++)
                 {
-                    for (ulong j = 0; j < Column; j++)
+                    for (ulong j = 0; j < left.Column; j++)
                     {
                         T element = new();
-                        for (ulong k = 0; k < Column; k++)
+                        for (ulong k = 0; k < left.Column; k++)
                         {
-                            var mid = this.Locate(i, k).Add(matrix.Locate(k, j));
+                            var mid = left.Locate(i, k).Add(right.Locate(k, j));
                             element.Add(mid);
                         }
                     }
@@ -185,7 +203,7 @@ namespace Cider.Math
 
         public static Matrix<T> operator*(Matrix<T>left, Matrix<T> right)
         {
-            return left.Multify(right);
+            return Multify(left, right);
         }
 
         #endregion
