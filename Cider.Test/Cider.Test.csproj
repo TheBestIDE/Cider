@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cider.Compute\Cider.Math.csproj" />
     <ProjectReference Include="..\Cider.Global\Cider.Global.csproj" />
   </ItemGroup>
 

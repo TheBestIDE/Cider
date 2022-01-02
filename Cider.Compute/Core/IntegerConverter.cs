@@ -151,7 +151,7 @@ namespace Cider.Math.Core
                 var length = value.Length < 9 ? value.Length : 9;
                 var chunk = value.Substring(0, length);
                 result = Calc.Multiply(result, resultLength,
-                    (uint)Math.Pow(10, length));
+                    (uint)System.Math.Pow(10, length));
                 resultLength = Bits.Length(result, result.Length);
                 result = Calc.Add(result, resultLength,
                     uint.Parse(chunk, NumberStyles.None,

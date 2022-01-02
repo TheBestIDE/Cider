@@ -1,27 +1,32 @@
 ﻿using Cider.Global;
 using Cider.Global.Core;
+using Cider.Math;
 
-//var conf = ConfigurationFactory.CreateInstance();
-//Console.WriteLine("Test Configuration:{0}, {1}, {2}", conf.EnCoding, conf.HashAlgorithm, conf.BlockLength);
 namespace Cider.Test
 {
     public class Program
     {
         public static int Main(string[] args)
         {
-            byte[] buffer = new byte[] {2, 3, 4, 5};
-            Edit(buffer);
-            foreach(byte b in buffer)
-            {
-                Console.WriteLine(b);
-            }
+            TestMatrix();
             return 0;
         }
-        public static void Edit(byte[] buffer)
+        
+        public static void TestMatrix()
         {
-            if (buffer == null)
-                return;
-            buffer[0] = 1;
+            GFMatrix matrix1 = new(2, 2, 4);
+            GFMatrix matrix2 = new(2, 2, 4);
+            for (ulong i = 0; i < 4; i++)
+            {
+                matrix1[i >> 1, i & 1] = new GF(4, (i << 1) & 0x0F);
+                matrix2[i >> 1, i & 1] = new GF(4, (i << 2) & 0x0F);
+            }
+
+            GFMatrix result = matrix1 * matrix2;
+            for (ulong i = 0; i < 2; i++)
+            {
+                Console.WriteLine("{0} {1}\t{2} {3}\t{4} {5}", matrix1[i, 0], matrix1[i, 1], matrix2[i, 0], matrix2[i, 1], result[i, 0], result[i, 1]);
+            }
         }
     }
 }

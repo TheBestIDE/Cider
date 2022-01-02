@@ -31,7 +31,7 @@ namespace Cider.Net
     {
         public byte Option { get; set; }
 
-        public uint DataNumber { get; set; }
+        public uint DataLength { get; set; }
 
         public void SetOption(ApplicationOption opion)
         {
@@ -48,6 +48,19 @@ namespace Cider.Net
 
         public abstract void Send(byte[] data);
 
+        public abstract void SendHashList(string[] hashs);
+
+        public abstract void SendReturnNumber(int number);
+
+        public abstract void SendLinearResult(byte[] data);
+
         public abstract int Receive(byte[] data);
+
+        public abstract string[] ReceiveHashList();
+
+        public abstract int ReceiveReturnNumber();
+
+        public abstract byte[] ReceiveLinearResult();
+
     }
 }

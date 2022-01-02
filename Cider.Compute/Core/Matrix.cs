@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Cider.Math
+namespace Cider.Math.Core
 {
     public class Matrix<T> : IAddable<Matrix<T>>, IMultifyable<Matrix<T>>
         where T : IAddable<T>,
@@ -183,7 +183,7 @@ namespace Cider.Math
                 var mat = new Matrix<T>(left.Row, right.Column);
                 for (ulong i = 0; i < left.Row; i++)
                 {
-                    for (ulong j = 0; j < left.Column; j++)
+                    for (ulong j = 0; j < right.Column; j++)
                     {
                         T element = new();
                         for (ulong k = 0; k < left.Column; k++)
@@ -191,6 +191,7 @@ namespace Cider.Math
                             var mid = left.Locate(i, k).Add(right.Locate(k, j));
                             element.Add(mid);
                         }
+                        mat._mat[i, j] = element;
                     }
                 }
                 return mat;
