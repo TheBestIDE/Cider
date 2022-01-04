@@ -12,7 +12,7 @@ namespace Cider.Global
         {
             Config = ConfigurationFactory.CreateInstance();
             Config.EnCoding = Encoding.UTF8;
-            Config.HashAlgorithm = "SHA256";
+            Config.HashAlgorithm = Core.SupportHash.SHA256;
             Config.BlockLength = 1024;
             Config.ServerPort = 8088;
         }

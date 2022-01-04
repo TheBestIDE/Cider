@@ -19,7 +19,7 @@ namespace Cider.Global.Core
         /// <summary>
         /// 哈希算法
         /// </summary>
-        public abstract string HashAlgorithm { get; internal set; }
+        public abstract SupportHash HashAlgorithm { get; internal set; }
 
         /// <summary>
         /// 分块长度

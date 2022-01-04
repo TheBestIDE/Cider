@@ -8,10 +8,9 @@ namespace Cider.Global.Core
 {
     public enum SupportHash
     {
-        MD5,
-        SHA128,
-        SHA256,
-        SHA384,
-        SHA512
+        MD5 = 128,
+        SHA256 = 256,
+        SHA384 = 384,
+        SHA512 = 512
     }
 }

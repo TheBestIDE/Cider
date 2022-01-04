@@ -13,15 +13,10 @@ namespace Cider.Global
     {
         public static Configuration CreateInstance()
         {
-            return new Configuration() 
-            { 
-                EnCoding = Encoding.UTF8, 
-                HashAlgorithm = "SHA256", 
-                BlockLength = 1024
-            };
+            return CreateInstance(Encoding.UTF8, Core.SupportHash.SHA256, 1024);
         }
 
-        public static Configuration CreateInstance(Encoding en, string hashAlgorithm, int blockLength)
+        public static Configuration CreateInstance(Encoding en, Core.SupportHash hashAlgorithm, int blockLength)
         {
 
             return new Configuration()
