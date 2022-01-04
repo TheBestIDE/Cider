@@ -10,6 +10,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Cider.Compute\Cider.Math.csproj" />
     <ProjectReference Include="..\Cider.Global\Cider.Global.csproj" />
+    <ProjectReference Include="..\Cider.IO\Cider.IO.csproj" />
     <ProjectReference Include="..\Cider.Net\Cider.Net.csproj" />
   </ItemGroup>
 

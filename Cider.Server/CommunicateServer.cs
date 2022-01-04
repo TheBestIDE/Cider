@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Cider.IO;
 
 namespace Cider.Server
 {
@@ -79,17 +80,6 @@ namespace Cider.Server
             }
         }
 
-        protected void InitApplicationService()
-        {
-            ApplicationService.EnCode = RuntimeArgs.Config.EnCoding;
-            ApplicationService.HashLength = (int)RuntimeArgs.Config.HashAlgorithm;
-        }
-
-        protected HandleServiceBase GetHandleService()
-        {
-            return new HandleService();
-        }
-
         /// <summary>
         /// 处理连接异步方法
         /// </summary>
@@ -103,21 +93,30 @@ namespace Cider.Server
         /// </summary>
         protected void HandleConnection(ApplicationLayer appClient)
         {
+            BlockedFile file = new ();  // 保存当前处理的文件信息上下文
+            var handle = Core.Single<HandleService>.Instance;    // 获取处理实例 单例模式
             try
             {
-                var handle = GetHandleService();    // 创建处理实例
 
-                // 1.接收哈希列表
+                // 1.接收文件名
+                file.FileName = appClient.ReceiveFileName();
+
+                // 2.接收哈希列表
                 string[] hashs = appClient.ReceiveHashList();   // 接收到哈希列表
                 int number = handle.HandleHashList(hashs);  // 获取返回数值
+                file.BlockHashList = hashs.ToList();    // 写入哈希值列表
 
-                // 2.返回上传的线性表达式结果数值
+                // 3.返回上传的线性表达式结果数值
                 appClient.SendReturnNumber(number); // 发送返回数值
 
-                // 3.处理线性表达式结果
+                // 4.处理线性表达式结果
                 var result = appClient.ReceiveLinearResult();   // 接收线性表达式结果
-                var matrix = ConvertToMatrix(number, result);// 转化为矩阵
-                handle.HandleLinearResult(matrix);    // 处理线性表达式结果
+                var matrix = ConvertToMatrix(result);   // 转化为矩阵
+                if (matrix.Row != (ulong)number)    // 上传的线性表达式计算结果数量与请求的不一致
+                    throw new LackLinearResultException();
+                handle.HandleLinearResult(matrix);      // 处理线性表达式结果
+
+                // 5.写入文件
 
                 Console.WriteLine("Task Exit normally.");
             }
@@ -125,6 +124,34 @@ namespace Cider.Server
             {
                 // 未初始化应用层服务
                 Console.WriteLine("Application Layer Serivce Not Initialized.");
+            }
+            catch (LackLinearResultException)
+            {
+                // 缺失线性表达式的结果
+                Console.WriteLine("Lack of Linear Result.");
+                // 处理脏块
+                handle.HandleDirtyBlock(file);
+            }
+            catch (LackHeadBytesException)
+            {
+                // 头字节缺失
+                Console.WriteLine("Lack of head bytes.");
+            }
+            catch (LackDataBytesException)
+            {
+                // 数据字节缺失
+                Console.WriteLine("Lack of data bytes.");
+            }
+            catch (OperationMatchException)
+            {
+                // 接收到的操作异常
+                Console.WriteLine("Head indicate different from Operation.");
+            }
+            catch (Exception e)
+            {
+                // 未知异常
+                // 均接收
+                Console.WriteLine(e.StackTrace);
             }
             finally
             {
@@ -134,8 +161,15 @@ namespace Cider.Server
             }
         }
 
-        protected GFMatrix ConvertToMatrix(int row, byte[] bytes)
+        protected static void InitApplicationService()
         {
+            ApplicationService.EnCode = RuntimeArgs.Config.EnCoding;
+            ApplicationService.HashLength = (int)RuntimeArgs.Config.HashAlgorithm;
+        }
+
+        protected static GFMatrix ConvertToMatrix(byte[] bytes)
+        {
+            int row = bytes.Length / RuntimeArgs.Config.BlockLength;
             var matrix = new GFMatrix((ulong)row, 1, (uint)RuntimeArgs.Config.BlockLength);
             throw new NotImplementedException();
         }

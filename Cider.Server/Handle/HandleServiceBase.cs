@@ -1,4 +1,5 @@
 using Cider.Math;
+using Cider.IO;
 
 namespace Cider.Server.Handle
 {
@@ -14,6 +15,12 @@ namespace Cider.Server.Handle
         /// 处理线性表达式结果
         /// </summary>
         /// <param name="matrix">线性表达式结果矩阵</param>
-        public abstract void HandleLinearResult(GFMatrix matrix);
+        public abstract FileBlock[] HandleLinearResult(GFMatrix matrix);
+
+        /// <summary>
+        /// 处理脏块
+        /// </summary>
+        /// <param name="file"></param>
+        public abstract void HandleDirtyBlock(BlockedFile file);
     }
 }

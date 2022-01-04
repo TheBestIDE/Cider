@@ -87,6 +87,11 @@ namespace Cider.Net
         }
 
         #pragma warning disable 8602
+        /// <summary>
+        /// 发送文件名
+        /// </summary>
+        /// <param name="name">文件名</param>
+        /// <exception cref="ArgumentException">未初始化应用层服务</exception>
         public override void SendFileName(string name)
         {
             CheckIfInit();
@@ -130,9 +135,11 @@ namespace Cider.Net
             throw new NotImplementedException();
         }
 
+        /// <summary>接收文件名</summary>
         /// <exception cref="LackDataBytesException"></exception>
         /// <exception cref="LackHeadBytesException"></exception>
         /// <exception cref="OperationMatchException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public override string ReceiveFileName()
         {
             CheckIfInit();
@@ -163,9 +170,11 @@ namespace Cider.Net
             return EnCode.GetString(mStream.GetBuffer());
         }
 
+        /// <summary>接收哈希列表</summary>
         /// <exception cref="LackDataBytesException"></exception>
         /// <exception cref="LackHeadBytesException"></exception>
         /// <exception cref="OperationMatchException"></exception>
+        /// <exception cref="ArgumentException"></exception>
         public override string[] ReceiveHashList()
         {
             CheckIfInit();
@@ -181,9 +190,9 @@ namespace Cider.Net
             {
                 int count = Receive(buf);   // 一次接收的字节数
                 mStream.Write(buf, 0, count);   // 接收的字节写入内存缓冲区
-                if (mStream.Length >= buf.Count())  // 已接收到一个哈希对应的字节数量
+                if (mStream.Length >= buf.Length)  // 已接收到一个哈希对应的字节数量
                 {
-                    mStream.Read(buf, 0, buf.Count());  // 读取出字节流
+                    mStream.Read(buf, 0, buf.Length);  // 读取出字节流
                     hashs[i] = Encoding.ASCII.GetString(buf);   // 转化为哈希字符串
                     waitTimes = 0;  // 重置等待次数
                     i++;    // 累加
@@ -203,12 +212,13 @@ namespace Cider.Net
             return hashs;
         }
 
+        /// <summary>接收返回的线性表达式数值</summary>
         /// <exception cref="LackDataBytesException"></exception>
         /// <exception cref="LackHeadBytesException"></exception>
         /// <exception cref="OperationMatchException"></exception>
         public override int ReceiveReturnNumber()
         {
-            ApplicationHead head = ReceiveHead(ApplicationOption.SendReturnNumber);
+            _ = ReceiveHead(ApplicationOption.SendReturnNumber);
             byte[] buf = new byte[4];
             if (Receive(buf) != 4)
                 throw new LackDataBytesException();
@@ -216,7 +226,10 @@ namespace Cider.Net
             return ToInt(buf, 0);
         }
 
-        /// <exception cref="LackDataBytesException"></exception>
+        /// <summary>
+        /// 接收线性表达式计算结果
+        /// </summary>
+        /// <exception cref="LackLinearResultException"></exception>
         /// <exception cref="LackHeadBytesException"></exception>
         /// <exception cref="OperationMatchException"></exception>
         public override byte[] ReceiveLinearResult()
@@ -224,7 +237,7 @@ namespace Cider.Net
             ApplicationHead head = ReceiveHead(ApplicationOption.SendLinearResult);
             
             byte[] buf = new byte[1024];    // 缓冲区
-            using MemoryStream mStream = new MemoryStream();
+            using MemoryStream mStream = new ();
             int waitTimes = 0;  // 等待次数
             while (mStream.Length < head.DataLength)
             {
@@ -241,7 +254,7 @@ namespace Cider.Net
                 }
                 else    // 等待超过10次 不再等待
                 {
-                    throw new LackDataBytesException();  // 收到的字节数有误
+                    throw new LackLinearResultException();  // 收到的字节数有误
                 }
             }
 
@@ -252,16 +265,6 @@ namespace Cider.Net
         {
             nStream.Close();
             client.Close();
-        }
-
-        /// <summary>
-        /// 测试是否被初始化
-        /// </summary>
-        /// <exception cref="ArgumentException">未初始化抛出异常</exception>
-        protected void CheckIfInit()
-        {
-            if (!CanProvideService)
-                throw new ArgumentException("HashLength is not init.");
         }
 
         /// <summary>
@@ -280,6 +283,16 @@ namespace Cider.Net
                 throw new OperationMatchException();  // 收到的数据报不是该操作
 
             return head;
+        }
+
+        /// <summary>
+        /// 测试是否被初始化
+        /// </summary>
+        /// <exception cref="ArgumentException">未初始化抛出异常</exception>
+        protected static void CheckIfInit()
+        {
+            if (!CanProvideService)
+                throw new ArgumentException("HashLength is not init.");
         }
 
         protected static byte[] ToBytes(int number)
