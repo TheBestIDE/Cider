@@ -11,17 +11,21 @@ namespace Cider.Net
     public enum ApplicationOption : byte
     {
         /// <summary>
+        /// 发送文件名
+        /// </summary>
+        SendFileName = 128,
+        /// <summary>
         /// 发送哈希值列表
         /// </summary>
-        SendHashList = 128,
+        SendHashList = 64,
         /// <summary>
         /// 服务端返回上传的数量
         /// </summary>
-        ReturnNumber = 64,
+        SendReturnNumber = 32,
         /// <summary>
         /// 发送线性表达式计算结果
         /// </summary>
-        SendLinearResult = 32,
+        SendLinearResult = 16,
     }
 
     /// <summary>
@@ -83,7 +87,45 @@ namespace Cider.Net
         }
     }
 
-    public abstract class ApplicationLayer
+    /// <summary>数据报缺失字节</summary>
+    public class LackBytesException : Exception
+    {
+        public LackBytesException(){}
+        public LackBytesException(string mes) : base(mes){}
+    }
+
+    /// <summary>数据报头部缺失字节</summary>
+    public class LackHeadBytesException : LackBytesException
+    {
+        public LackHeadBytesException()
+        {
+        }
+
+        public LackHeadBytesException(string mes) : base(mes)
+        {
+        }
+    }
+
+    /// <summary>数据报数据部分缺失字节</summary>
+    public class LackDataBytesException : LackBytesException
+    {
+        public LackDataBytesException()
+        {
+        }
+
+        public LackDataBytesException(string mes) : base(mes)
+        {          
+        }
+    }
+
+    /// <summary>头部指示操作与请求操作不匹配</summary>
+    public class OperationMatchException : Exception 
+    {
+        public OperationMatchException(){}
+        public OperationMatchException(string mes) : base(mes){}
+    }
+
+    public abstract class ApplicationLayer : IDisposable
     {
         public abstract ApplicationHead Head { get; protected set; }
 
@@ -93,6 +135,11 @@ namespace Cider.Net
         /// 发送比特流
         /// </summary>
         public abstract void Send(byte[] data);
+
+        /// <summary>
+        /// 发送文件名
+        /// </summary>
+        public abstract void SendFileName(string name);
 
         /// <summary>
         /// 发送文件分块的哈希值列表
@@ -115,6 +162,11 @@ namespace Cider.Net
         public abstract int Receive(byte[] data);
 
         /// <summary>
+        /// 接收文件名
+        /// </summary>
+        public abstract string ReceiveFileName();
+
+        /// <summary>
         /// 接收哈希列表
         /// </summary>
         public abstract string[] ReceiveHashList();
@@ -128,6 +180,8 @@ namespace Cider.Net
         /// 接收线性表达式计算结果
         /// </summary>
         public abstract byte[] ReceiveLinearResult();
+
+        public abstract void Dispose();
 
     }
 }
