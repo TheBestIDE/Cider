@@ -8,8 +8,8 @@ namespace Cider.Server.Handle
         /// <summary>
         /// 处理哈希值列表
         /// </summary>
-        /// <returns>需要对方上传的线性表达式结果数量</returns>
-        public abstract int HandleHashList(string[] hashs);
+        /// <returns>服务器不存在的哈希值列表</returns>
+        public abstract string[]? HandleHashList(string[] hashs);
 
         /// <summary>
         /// 处理线性表达式结果
@@ -22,5 +22,17 @@ namespace Cider.Server.Handle
         /// </summary>
         /// <param name="file"></param>
         public abstract void HandleDirtyBlock(BlockedFile file);
+
+        /// <summary>
+        /// 混淆数量
+        /// </summary>
+        /// <param name="number">原来的数量</param>        
+        public abstract int HandleConfuseNumber(int number);
+
+        /// <summary>
+        /// 写入文件
+        /// </summary>
+        /// <param name="file">文件信息</param>
+        public abstract void HandleWriteFile(BlockedFile file);
     }
 }
