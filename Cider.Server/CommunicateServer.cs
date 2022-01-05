@@ -97,26 +97,29 @@ namespace Cider.Server
             var handle = Core.Single<HandleService>.Instance;    // 获取处理实例 单例模式
             try
             {
-
                 // 1.接收文件名
                 file.FileName = appClient.ReceiveFileName();
 
                 // 2.接收哈希列表
                 string[] hashs = appClient.ReceiveHashList();   // 接收到哈希列表
-                int number = handle.HandleHashList(hashs);  // 获取返回数值
+                string[]? diffHash = handle.HandleHashList(hashs);  // 获取服务器不存在的哈希值
                 file.BlockHashList = hashs.ToList();    // 写入哈希值列表
+                file.DifferentBlockList = diffHash?.ToList();   // 写入不存在列表
 
                 // 3.返回上传的线性表达式结果数值
-                appClient.SendReturnNumber(number); // 发送返回数值
+                int number = diffHash?.Length ?? 0;     // 服务器上不存在的哈希值数量
+                number = handle.HandleConfuseNumber(number);    // 混淆数量
+                appClient.SendReturnNumber(number);     // 发送返回数值
 
                 // 4.处理线性表达式结果
                 var result = appClient.ReceiveLinearResult();   // 接收线性表达式结果
                 var matrix = ConvertToMatrix(result);   // 转化为矩阵
-                if (matrix.Row != (ulong)number)    // 上传的线性表达式计算结果数量与请求的不一致
+                if (matrix.Row != (ulong)number)        // 上传的线性表达式计算结果数量与请求的不一致
                     throw new LackLinearResultException();
-                handle.HandleLinearResult(matrix);      // 处理线性表达式结果
+                file.DifferentFileBlocks = handle.HandleLinearResult(matrix);   // 处理线性表达式结果
 
                 // 5.写入文件
+                handle.HandleWriteFile(file);
 
                 Console.WriteLine("Task Exit normally.");
             }
@@ -130,7 +133,7 @@ namespace Cider.Server
                 // 缺失线性表达式的结果
                 Console.WriteLine("Lack of Linear Result.");
                 // 处理脏块
-                handle.HandleDirtyBlock(file);
+                // handle.HandleDirtyBlock(file);
             }
             catch (LackHeadBytesException)
             {

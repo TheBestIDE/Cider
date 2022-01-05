@@ -5,6 +5,7 @@ namespace Cider.Server
     {
         public static int Main(string[] args)
         {
+            Core.Single<CommunicateServer>.Instance.Run();
             return 0;
         }
     }
