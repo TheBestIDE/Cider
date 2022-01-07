@@ -14,6 +14,9 @@ namespace Cider.Server.Data
         public void SetBlockMessage(FileBlock fb, string fbname);
 
         /// <summary>读取文件信息</summary>
-        public BlockedFile ReadFileMessage(string fileName);
+        public BlockedFile? ReadFileMessage(string fileName);
+
+        /// <summary>读取文件块的物理存储文件名</summary>
+        public string[]? ReadFileBlocksFileName(string fileName);
     }
 }

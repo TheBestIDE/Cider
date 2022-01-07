@@ -1,9 +1,17 @@
 using Cider.IO;
+using Cider.Server.Data.Model;
 
 namespace Cider.Server.Data
 {
     public class DataProvider : IDataProvider
     {
+        protected IServerDb Db;
+
+        public DataProvider()
+        {
+            Db = Core.Single<ServerDb>.Instance;
+        }
+
         public string[] FindNotExistHash(string[] hashs)
         {
             throw new NotImplementedException();
@@ -11,17 +19,40 @@ namespace Cider.Server.Data
 
         public void SetFile(BlockedFile file)
         {
-            throw new NotImplementedException();
+            Files f = new Files()
+            {
+                FileName = file.FileName,
+                BlockHash = file.BlockHashList
+            };
+            Db.InsertFile(f);
         }
 
         public void SetBlockMessage(FileBlock fb, string fbname)
         {
-            throw new NotImplementedException();
+            FileBlocks fbs = new FileBlocks()
+            {
+                BlockFileName = fbname,
+                BlockHash = fb.HashCode
+            };
+            Db.InsertBlock(fbs);
         }
 
-        public BlockedFile ReadFileMessage(string fileName)
+        #pragma warning disable 8601
+        public BlockedFile? ReadFileMessage(string fileName)
         {
-            throw new NotImplementedException();
+            var f = Db.GetFile(fileName);
+            return f is null 
+                        ? null 
+                        : new BlockedFile()
+                        {
+                            FileName = fileName,
+                            BlockHashList = f.BlockHash
+                        };
+        }
+
+        public string[]? ReadFileBlocksFileName(string fileName)
+        {
+            return Db.CombineFilesAndBlocks(fileName);
         }
     }
 }
