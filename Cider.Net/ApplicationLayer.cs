@@ -26,6 +26,17 @@ namespace Cider.Net
         /// 发送线性表达式计算结果
         /// </summary>
         SendLinearResult = 16,
+        /// <summary>请求指令</summary>
+        RequestCommand = 1,
+    }
+
+    public enum ApplicationRequestCommand : byte
+    {
+        None = 0,
+        /// <summary>上载</summary>
+        Upload = 1,
+        /// <summary>下载</summary>
+        Download = 2,
     }
 
     /// <summary>
@@ -135,12 +146,23 @@ namespace Cider.Net
     {
         public abstract ApplicationHead Head { get; protected set; }
 
+        public abstract void RequestUpload();
+
+        public abstract void RequestDownload();
+
+        public abstract ApplicationRequestCommand ReceiveRequestCommand();
+
         public abstract void SetHead(ApplicationOption option);
 
         /// <summary>
         /// 发送比特流
         /// </summary>
-        public abstract void Send(byte[] data);
+        public void Send(byte[] data)
+        {
+            Send(data, 0, data.Length);
+        }
+
+        public abstract void Send(byte[] data, int offset, int count);
 
         /// <summary>
         /// 发送文件名

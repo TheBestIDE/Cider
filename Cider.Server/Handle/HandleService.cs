@@ -46,5 +46,11 @@ namespace Cider.Server.Handle
             // 文件信息写入数据库
             dataProvider.SetFile(file);
         }
+
+        public override FileBlocksReadStream HandleReadFile(string fileName)
+        {
+            var fbsn = dataProvider.ReadFileBlocksFileName(fileName);
+            return new FileBlocksReadStream(fbsn);
+        }
     }
 }

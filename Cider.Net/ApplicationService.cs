@@ -80,10 +80,46 @@ namespace Cider.Net
                 return 0;
         }
 
-        public override void Send(byte[] data)
+        public override void Send(byte[] data, int offset, int count)
         {
             if (nStream.CanWrite)
-                nStream.Write(data, 0, data.Length);
+                nStream.Write(data, offset, count);
+        }
+
+        public override void RequestUpload()
+        {
+            Head.SetOption(ApplicationOption.RequestCommand);
+            Head.DataLength = 1U;
+            byte[] re = new byte[1] { (byte)ApplicationRequestCommand.Upload };
+            Send(Head.GetBytes());
+            Send(re);
+        }
+
+        public override void RequestDownload()
+        {
+            Head.SetOption(ApplicationOption.RequestCommand);
+            Head.DataLength = 1U;
+            byte[] re = new byte[1] { (byte)ApplicationRequestCommand.Download };
+            Send(Head.GetBytes());
+            Send(re);
+        }
+
+        /// <summary>接收请求命令</summary>
+        /// <exception cref="LackDataBytesException"></exception>
+        /// <exception cref="LackHeadBytesException"></exception>
+        /// <exception cref="OperationMatchException"></exception>
+        public override ApplicationRequestCommand ReceiveRequestCommand()
+        {
+            _ = ReceiveHead(ApplicationOption.RequestCommand);
+            byte[] buf = new byte[1];
+            if (Receive(buf) != 1)
+                throw new LackDataBytesException();
+            if (buf[0] == 1)
+                return ApplicationRequestCommand.Upload;
+            else if (buf[0] == 2)
+                return ApplicationRequestCommand.Download;
+            else
+                return ApplicationRequestCommand.None;
         }
 
         #pragma warning disable 8602

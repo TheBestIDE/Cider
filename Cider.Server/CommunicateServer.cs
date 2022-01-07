@@ -93,33 +93,24 @@ namespace Cider.Server
         /// </summary>
         protected void HandleConnection(ApplicationLayer appClient)
         {
-            BlockedFile file = new ();  // 保存当前处理的文件信息上下文
             var handle = Core.Single<HandleService>.Instance;    // 获取处理实例 单例模式
             try
             {
-                // 1.接收文件名
-                file.FileName = appClient.ReceiveFileName();
-
-                // 2.接收哈希列表
-                string[] hashs = appClient.ReceiveHashList();   // 接收到哈希列表
-                string[]? diffHash = handle.HandleHashList(hashs);  // 获取服务器不存在的哈希值
-                file.BlockHashList = hashs.ToList();    // 写入哈希值列表
-                file.DifferentBlockList = diffHash?.ToList();   // 写入不存在列表
-
-                // 3.返回上传的线性表达式结果数值
-                int number = diffHash?.Length ?? 0;     // 服务器上不存在的哈希值数量
-                number = handle.HandleConfuseNumber(number);    // 混淆数量
-                appClient.SendReturnNumber(number);     // 发送返回数值
-
-                // 4.处理线性表达式结果
-                var result = appClient.ReceiveLinearResult();   // 接收线性表达式结果
-                var matrix = ConvertToMatrix(result);   // 转化为矩阵
-                if (matrix.Row != (ulong)number)        // 上传的线性表达式计算结果数量与请求的不一致
-                    throw new LackLinearResultException();
-                file.DifferentFileBlocks = handle.HandleLinearResult(matrix);   // 处理线性表达式结果
-
-                // 5.写入文件
-                handle.HandleWriteFile(file);
+                var request = appClient.ReceiveRequestCommand();
+                if (request == ApplicationRequestCommand.Upload)
+                {
+                    HanldeUpload(appClient);
+                    Console.WriteLine("Request Upload");
+                }
+                else if (request == ApplicationRequestCommand.Download)
+                {
+                    HandleDownload(appClient);
+                    Console.WriteLine("Request Download");
+                }
+                else
+                {
+                    Console.WriteLine("Unknow Command");
+                }
 
                 Console.WriteLine("Task Exit normally.");
             }
@@ -161,6 +152,63 @@ namespace Cider.Server
                 clientDict.Remove(appClient.GetHashCode()); // 移除出字典
                 appClient.Dispose();    // 释放非托管资源
                 Console.WriteLine("Task Compelted.");
+            }
+        }
+
+        /// <summary>
+        /// 处理上传请求
+        /// </summary>
+        /// <exception cref="LackDataBytesException"></exception>
+        /// <exception cref="LackHeadBytesException"></exception>
+        /// <exception cref="OperationMatchException"></exception>
+        /// <exception cref="ArgumentException">未初始化应用层服务</exception>
+        protected void HanldeUpload(ApplicationLayer appClient)
+        {
+            BlockedFile file = new ();  // 保存当前处理的文件信息上下文
+            var handle = Core.Single<HandleService>.Instance;    // 获取处理实例 单例模式
+
+            // 1.接收文件名
+            file.FileName = appClient.ReceiveFileName();
+
+            // 2.接收哈希列表
+            string[] hashs = appClient.ReceiveHashList();   // 接收到哈希列表
+            string[]? diffHash = handle.HandleHashList(hashs);  // 获取服务器不存在的哈希值
+            file.BlockHashList = hashs.ToList();    // 写入哈希值列表
+            file.DifferentBlockList = diffHash?.ToList();   // 写入不存在列表
+
+            // 3.返回上传的线性表达式结果数值
+            int number = diffHash?.Length ?? 0;     // 服务器上不存在的哈希值数量
+            number = handle.HandleConfuseNumber(number);    // 混淆数量
+            appClient.SendReturnNumber(number);     // 发送返回数值
+
+            // 4.处理线性表达式结果
+            var result = appClient.ReceiveLinearResult();   // 接收线性表达式结果
+            var matrix = ConvertToMatrix(result);   // 转化为矩阵
+            if (matrix.Row != (ulong)number)        // 上传的线性表达式计算结果数量与请求的不一致
+                throw new LackLinearResultException();
+            file.DifferentFileBlocks = handle.HandleLinearResult(matrix);   // 处理线性表达式结果
+
+            // 5.写入文件
+            handle.HandleWriteFile(file);
+        }
+
+        /// <summary>
+        /// 处理下载请求
+        /// </summary>
+        /// <exception cref="LackDataBytesException"></exception>
+        /// <exception cref="LackHeadBytesException"></exception>
+        /// <exception cref="OperationMatchException"></exception>
+        /// <exception cref="ArgumentException">未初始化应用层服务</exception>
+        protected void HandleDownload(ApplicationLayer appClient)
+        {
+            var handle = Core.Single<HandleService>.Instance;
+            string fileName = appClient.ReceiveFileName();
+            Stream f = handle.HandleReadFile(fileName);
+            byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
+            int count;
+            while ((count = f.Read(buffer, 0, buffer.Length)) != 0)
+            {
+                appClient.Send(buffer, 0, count);
             }
         }
 

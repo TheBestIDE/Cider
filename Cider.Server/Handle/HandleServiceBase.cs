@@ -34,5 +34,11 @@ namespace Cider.Server.Handle
         /// </summary>
         /// <param name="file">文件信息</param>
         public abstract void HandleWriteFile(BlockedFile file);
+
+        /// <summary>
+        /// 获取文件信息
+        /// </summary>
+        /// <param name="fileName">文件名</param>
+        public abstract FileBlocksReadStream HandleReadFile(string fileName);
     }
 }
