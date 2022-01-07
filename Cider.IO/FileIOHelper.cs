@@ -10,7 +10,7 @@ namespace Cider.IO
 
         public static string TempDirectory { get; } = "tmp";
 
-        private static string GetFullRuntimeDirectory(string directoryName)
+        public static string GetFullRuntimeDirectory(string directoryName)
         {
             return RuntimeArgs.RuntimeDirectory + directoryName + RuntimeArgs.Separator;
         }
@@ -23,6 +23,30 @@ namespace Cider.IO
         public static string GetFullTempFilePath(string filename)
         {
             return GetFullRuntimeDirectory(TempDirectory) + filename;
+        }
+
+        /// <summary>创建文件</summary>
+        /// <param name="path">文件绝对路径</param>
+        /// <returns>成功返回0 失败返回-1</returns>
+        public static int CreateFile(string path)
+        {
+            FileStream? fs = null;
+            int runtimeCode = 0;
+            try
+            {
+                if (!File.Exists(path))
+                    fs = File.Create(path);
+            }
+            catch
+            {
+                runtimeCode = -1;
+            }
+            finally
+            {
+                fs?.Dispose();
+            }
+
+            return runtimeCode;
         }
 
         /// <summary>写入文件</summary>
@@ -44,7 +68,7 @@ namespace Cider.IO
             }
             finally
             {
-                fs?.Close();
+                fs?.Dispose();
             }
 
             return runtimeCode;
@@ -71,7 +95,7 @@ namespace Cider.IO
             }
             finally
             {
-                fs?.Close();
+                fs?.Dispose();
             }
 
             return runtimeCode;

@@ -12,11 +12,6 @@ namespace Cider.IO
 
         public byte[] Data { get; set; }
 
-        public FileBlock (byte[] data)
-        {
-            Data = data;
-        }
-
         public FileBlock (string hash, byte[] data)
         {
             HashCode = hash;
