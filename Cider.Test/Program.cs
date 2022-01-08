@@ -8,8 +8,16 @@ namespace Cider.Test
     {
         public static int Main(string[] args)
         {
-            TestMatrix();
+            TestSubString();
             return 0;
+        }
+
+        public static void TestSubString()
+        {
+            string path = "123\\456\\789";
+            int i = path.LastIndexOf(RuntimeArgs.Separator);
+            string substring = path.Substring(i + 1, path.Length - i - 1);
+            Console.WriteLine(substring);
         }
         
         public static void TestMatrix()
