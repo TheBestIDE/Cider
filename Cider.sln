@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cider.Test", "Cider.Test\Ci
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cider.IO", "Cider.IO\Cider.IO.csproj", "{A34A34C7-D4A5-4D3C-B22E-A70092F2789A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cider.Hash", "Cider.Hash\Cider.Hash.csproj", "{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		EnumExtension\EnumExtension.projitems*{3dac192b-717e-4447-814a-ef4734ff4f36}*SharedItemsImports = 13
@@ -61,6 +63,10 @@ Global
 		{A34A34C7-D4A5-4D3C-B22E-A70092F2789A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A34A34C7-D4A5-4D3C-B22E-A70092F2789A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A34A34C7-D4A5-4D3C-B22E-A70092F2789A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -71,6 +77,7 @@ Global
 		{794EBC0B-0A76-4810-9C3B-9D39D8A02216} = {C21A96E8-6B31-4764-8DFB-49E75060D58E}
 		{3DAC192B-717E-4447-814A-EF4734FF4F36} = {D48C6A8E-17CF-46B1-A420-DD21D84DC0E3}
 		{A34A34C7-D4A5-4D3C-B22E-A70092F2789A} = {C21A96E8-6B31-4764-8DFB-49E75060D58E}
+		{E2C645F8-640A-45E3-9FD1-FC42E3263A4A} = {C21A96E8-6B31-4764-8DFB-49E75060D58E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {9B0A7A33-9B08-4253-9A6A-770D746293E0}
