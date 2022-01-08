@@ -203,7 +203,7 @@ namespace Cider.Server
         {
             var handle = Core.Single<HandleService>.Instance;
             string fileName = appClient.ReceiveFileName();
-            Stream f = handle.HandleReadFile(fileName);
+            using Stream f = handle.HandleReadFile(fileName);
             byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
             int count;
             while ((count = f.Read(buffer, 0, buffer.Length)) != 0)

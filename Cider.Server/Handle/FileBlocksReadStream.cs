@@ -1,4 +1,4 @@
-
+using Cider.Global;
 namespace Cider.Server.Handle
 {
     public class FileBlocksReadStream : Stream
@@ -26,6 +26,7 @@ namespace Cider.Server.Handle
                     if (File.Exists(path))
                         filePathsQueue.Append(path);
                 }
+                length = filePathsQueue.Count * RuntimeArgs.Config.BlockLength;
                 GetNextExist();
             }
         }
@@ -87,6 +88,13 @@ namespace Cider.Server.Handle
         public override void Flush()
         {
             
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                fileStream?.Dispose();
+            filePathsQueue = null;
         }
 
         #pragma warning disable 8602

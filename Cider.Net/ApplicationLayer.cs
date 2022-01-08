@@ -8,26 +8,43 @@ using System.Net;
 
 namespace Cider.Net
 {
+    /// <summary>
+    /// 8bits选项
+    /// 前四bits:
+    /// 1:命令 2:上传 3:下载 4:错误位
+    /// 
+    /// </summary>
     public enum ApplicationOption : byte
     {
         /// <summary>
         /// 发送文件名
         /// </summary>
-        SendFileName = 128,
+        SendFileName = 0x60,
+
+        /// <summary>
+        /// 发送文件
+        /// </summary>
+        SendFile = 0x20,
+        /// <summary>
+        /// 发送文件不存在或损坏
+        /// </summary>
+        SendFileNotExist = 0x30,
+
         /// <summary>
         /// 发送哈希值列表
         /// </summary>
-        SendHashList = 64,
+        SendHashList = 0x40,
         /// <summary>
         /// 服务端返回上传的数量
         /// </summary>
-        SendReturnNumber = 32,
+        SendReturnNumber = 0x41,
         /// <summary>
         /// 发送线性表达式计算结果
         /// </summary>
-        SendLinearResult = 16,
+        SendLinearResult = 0x42,
+
         /// <summary>请求指令</summary>
-        RequestCommand = 1,
+        RequestCommand = 0x80,
     }
 
     public enum ApplicationRequestCommand : byte
@@ -146,13 +163,78 @@ namespace Cider.Net
     {
         public abstract ApplicationHead Head { get; protected set; }
 
-        public abstract void RequestUpload();
+        /// <summary>
+        /// 解析头部
+        /// </summary>
+        /// <exception cref="LackHeadBytesException">头部不完整</exception>
+        /// <exception cref="OperationMatchException">数据报操作不匹配</exception>
+        protected ApplicationHead ReceiveHead(ApplicationOption option)
+        {
+            byte[] bhead = new byte[5];
+            if (Receive(bhead) != 5)
+                throw new LackHeadBytesException();  // 收到的头部字节不完整
 
-        public abstract void RequestDownload();
+            var head = ApplicationHead.CreateFromBytes(bhead);
+            if (head.Option != (byte)ApplicationOption.SendLinearResult)
+                throw new OperationMatchException();  // 收到的数据报不是该操作
 
-        public abstract ApplicationRequestCommand ReceiveRequestCommand();
+            return head;
+        }
 
-        public abstract void SetHead(ApplicationOption option);
+        /// <summary>
+        /// 解析头部
+        /// </summary>
+        /// <exception cref="LackHeadBytesException">头部不完整</exception>
+        protected ApplicationHead ReceiveHead()
+        {
+            byte[] bhead = new byte[5];
+            if (Receive(bhead) != 5)
+                throw new LackHeadBytesException();  // 收到的头部字节不完整
+
+            return ApplicationHead.CreateFromBytes(bhead);
+        }
+
+        public virtual void RequestUpload()
+        {
+            Head.SetOption(ApplicationOption.RequestCommand);
+            Head.DataLength = 1U;
+            byte[] re = new byte[1] { (byte)ApplicationRequestCommand.Upload };
+            Send(Head.GetBytes());
+            Send(re);
+        }
+
+        public virtual void RequestDownload()
+        {
+            Head.SetOption(ApplicationOption.RequestCommand);
+            Head.DataLength = 1U;
+            byte[] re = new byte[1] { (byte)ApplicationRequestCommand.Download };
+            Send(Head.GetBytes());
+            Send(re);
+        }
+
+        /// <summary>接收请求命令</summary>
+        /// <exception cref="LackDataBytesException"></exception>
+        /// <exception cref="LackHeadBytesException"></exception>
+        /// <exception cref="OperationMatchException"></exception>
+        public virtual ApplicationRequestCommand ReceiveRequestCommand()
+        {
+            _ = ReceiveHead(ApplicationOption.RequestCommand);
+            byte[] buf = new byte[1];
+            if (Receive(buf) != 1)
+                throw new LackDataBytesException();
+            if (buf[0] == 1)
+                return ApplicationRequestCommand.Upload;
+            else if (buf[0] == 2)
+                return ApplicationRequestCommand.Download;
+            else
+                return ApplicationRequestCommand.None;
+        }
+
+        public void SetHead(ApplicationOption option, uint length)
+        {
+            Head.SetOption(option);
+            Head.DataLength = length;
+        }
 
         /// <summary>
         /// 发送比特流
@@ -185,6 +267,11 @@ namespace Cider.Net
         public abstract void SendLinearResult(byte[] data);
 
         /// <summary>
+        /// 使用流发送文件
+        /// </summary>
+        public abstract void SendFile(Stream stream);
+
+        /// <summary>
         /// 接收比特流
         /// </summary>
         public abstract int Receive(byte[] data);
@@ -208,6 +295,11 @@ namespace Cider.Net
         /// 接收线性表达式计算结果
         /// </summary>
         public abstract byte[] ReceiveLinearResult();
+
+        /// <summary>
+        /// 接收文件
+        /// </summary>
+        public abstract Stream? ReceiveFile();
 
         public abstract void Dispose();
 

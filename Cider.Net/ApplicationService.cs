@@ -86,42 +86,6 @@ namespace Cider.Net
                 nStream.Write(data, offset, count);
         }
 
-        public override void RequestUpload()
-        {
-            Head.SetOption(ApplicationOption.RequestCommand);
-            Head.DataLength = 1U;
-            byte[] re = new byte[1] { (byte)ApplicationRequestCommand.Upload };
-            Send(Head.GetBytes());
-            Send(re);
-        }
-
-        public override void RequestDownload()
-        {
-            Head.SetOption(ApplicationOption.RequestCommand);
-            Head.DataLength = 1U;
-            byte[] re = new byte[1] { (byte)ApplicationRequestCommand.Download };
-            Send(Head.GetBytes());
-            Send(re);
-        }
-
-        /// <summary>接收请求命令</summary>
-        /// <exception cref="LackDataBytesException"></exception>
-        /// <exception cref="LackHeadBytesException"></exception>
-        /// <exception cref="OperationMatchException"></exception>
-        public override ApplicationRequestCommand ReceiveRequestCommand()
-        {
-            _ = ReceiveHead(ApplicationOption.RequestCommand);
-            byte[] buf = new byte[1];
-            if (Receive(buf) != 1)
-                throw new LackDataBytesException();
-            if (buf[0] == 1)
-                return ApplicationRequestCommand.Upload;
-            else if (buf[0] == 2)
-                return ApplicationRequestCommand.Download;
-            else
-                return ApplicationRequestCommand.None;
-        }
-
         #pragma warning disable 8602
         /// <summary>
         /// 发送文件名
@@ -166,9 +130,26 @@ namespace Cider.Net
             Send(data);
         }
 
-        public override void SetHead(ApplicationOption option)
+        public override void SendFile(Stream stream)
         {
-            throw new NotImplementedException();
+            if (stream.CanRead)
+            {
+                Head.SetOption(ApplicationOption.SendFile);
+                Head.DataLength = (uint)stream.Length;
+                Send(Head.GetBytes());
+                byte[] buffer = new byte[8192];
+                int count;
+                while ((count = stream.Read(buffer, 0, buffer.Length)) != 0)
+                {
+                    Send(buffer, 0, count);
+                }
+            }
+            else
+            {
+                Head.SetOption(ApplicationOption.SendFileNotExist);
+                Head.DataLength = 0u;
+                Send(Head.GetBytes());
+            }
         }
 
         /// <summary>接收文件名</summary>
@@ -297,28 +278,26 @@ namespace Cider.Net
             return mStream.GetBuffer();
         }
 
+        /// <summary>
+        /// 接收文件内容
+        /// </summary>
+        /// <exception cref="LackHeadBytesException"></exception>
+        /// <exception cref="OperationMatchException"></exception>
+        /// <returns>读取文件的流</returns>
+        public override Stream? ReceiveFile()
+        {
+            ApplicationHead head = ReceiveHead();
+            if (head.Option == (byte)ApplicationOption.SendFileNotExist)
+                return null;
+            if (head.Option != (byte)ApplicationOption.SendFile)
+                throw new OperationMatchException();
+            return nStream;
+        }
+
         public override void Dispose()
         {
             nStream.Close();
             client.Close();
-        }
-
-        /// <summary>
-        /// 解析头部
-        /// </summary>
-        /// <exception cref="LackHeadBytesException">头部不完整</exception>
-        /// <exception cref="OperationMatchException">数据报操作不匹配</exception>
-        protected ApplicationHead ReceiveHead(ApplicationOption option)
-        {
-            byte[] bhead = new byte[5];
-            if (Receive(bhead) != 5)
-                throw new LackHeadBytesException();  // 收到的头部字节不完整
-
-            var head = ApplicationHead.CreateFromBytes(bhead);
-            if (head.Option != (byte)ApplicationOption.SendLinearResult)
-                throw new OperationMatchException();  // 收到的数据报不是该操作
-
-            return head;
         }
 
         /// <summary>
