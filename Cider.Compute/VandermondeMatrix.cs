@@ -151,8 +151,7 @@ namespace Cider.Math
 
         public IEnumerator<GF> GetEnumerator()
         {
-            Reset();
-            return this;
+            return new VandermondeEnumerator(RowCount, ColumnCount, BitLength);
         }
 
         IEnumerator IEnumerable.GetEnumerator()

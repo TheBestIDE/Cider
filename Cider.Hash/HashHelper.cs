@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using Cider.Global.Core;
 
 namespace Cider.Hash
@@ -30,9 +31,9 @@ namespace Cider.Hash
             return ToHexString(bhash);
         }
 
-        protected string ToHexString(byte[] bhash)
+        protected static string ToHexString(byte[] bhash)
         {
-            StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new ();
             foreach (byte b in bhash)
             {
                 builder.Append(string.Format("{0:X2}", b));

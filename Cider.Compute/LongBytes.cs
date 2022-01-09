@@ -7,110 +7,84 @@ using Cider.Math.Core;
 
 namespace Cider.Math
 {
-    /// <summary>
-    /// 长字节存储
-    /// </summary>
-    public class LongBytes : IComparable,
-                             IComparable<LongBytes>,
-                             IEquatable<LongBytes>
-
+    public struct LongBytes
     {
-        internal Integer block;
-        internal int length;
+        private byte[] bytes;
 
-        /// <summary>
-        /// Object比较
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentOutOfRangeException"></exception>
-        public int CompareTo(object? obj)
+        public long BitLength { get; private set; } = 0;
+
+        public LongBytes(long bitLength)
         {
-            if (obj == null)
-                throw new ArgumentNullException(nameof(obj));
-            if (obj is int _int)
-                return CompareTo(_int);
-            if (obj is LongBytes bytes)
-                return CompareTo(bytes);
-            throw new ArgumentOutOfRangeException(nameof(obj));
+            this.BitLength = bitLength;
+            bytes = new byte[bitLength];
         }
 
-        public int CompareTo(LongBytes other)
+        public LongBytes(byte[] bs)
         {
-            return block.CompareTo(other.block);
+            BitLength = bs.Length;
+            bytes = bs;
         }
 
-        /// <summary>
-        /// Object类型比较
-        /// 比较是否为相同引用
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public override bool Equals(object obj)
+        #region Method
+
+        #region Static Operator
+
+        public static implicit operator LongBytes(long data)
         {
-            if (obj == null)
-                return false;
-            if (obj is int)
-                return Equals((int)obj);
-            if (obj is LongBytes)
-                return Equals((LongBytes)obj);
-            return false;
+            return (ulong)data;
         }
 
-        /// <summary>
-        /// 与int类型数据比较
-        /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
-        public bool Equals(int other)
+        public static implicit operator LongBytes(ulong data)
         {
-            return CompareTo(other) == 0;
+            var bs = new LongBytes(8);
+            for (int i = 0, j = 7; i < 8; i++, j--)
+            {
+                bs.bytes[i] = (byte)(data >> (j << 3) & 0xFF); // 左移到对应位
+            }
+            return bs;
         }
 
-        /// <summary>
-        /// 与本类型数据比较
-        /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
-        public bool Equals(LongBytes other)
+        public static implicit operator LongBytes(int data)
         {
-            return CompareTo(other) == 0;
+            return (uint)data;
         }
 
-        public override int GetHashCode()
+        public static implicit operator LongBytes(uint data)
         {
-            return block.GetHashCode();
+            var bs = new LongBytes(4);
+            for (int i = 0, j = 3; i < 4; i++, j--)
+            {
+                bs.bytes[i] = (byte)(data >> (j << 3) & 0xFF); // 左移到对应位
+            }
+            return bs;
         }
 
-        public static bool operator ==(LongBytes left, LongBytes right)
+        public static LongBytes operator <<(LongBytes longBytes, int len)
         {
-            return left.Equals(right);
+            var bytes = new LongBytes(longBytes.BitLength);
+            int leftShiftByte = len >> 3;   // 左移的字节数
+            int leftShiftbit = len % 8;     // 除去字节数后需要左移的位数
+            if (leftShiftByte >= longBytes.BitLength)
+                return bytes;
+            if (leftShiftbit == 0)
+            {
+                for (int i = 0; i < longBytes.BitLength - leftShiftByte; i++)
+                {
+
+                }
+            }
+            return bytes;
         }
 
-        public static bool operator !=(LongBytes left, LongBytes right)
+        public static LongBytes operator >>(LongBytes longBytes, int len)
         {
-            return !(left==right);
+            var bytes = new LongBytes(longBytes.BitLength);
+
+            return bytes;
         }
 
-        public static bool operator <(LongBytes left, LongBytes right)
-        {
-            return left.CompareTo(right)<0;
-        }
+        #endregion
 
-        public static bool operator <=(LongBytes left, LongBytes right)
-        {
-            return left.CompareTo(right)<=0;
-        }
-
-        public static bool operator >(LongBytes left, LongBytes right)
-        {
-            return left.CompareTo(right)>0;
-        }
-
-        public static bool operator >=(LongBytes left, LongBytes right)
-        {
-            return left.CompareTo(right)>=0;
-        }
+        #endregion
     }
 }
