@@ -65,6 +65,30 @@ namespace Cider.Math
             return new GF(64, b);
         }
 
+        public static implicit operator byte[](GF gf)
+        {
+            var bcount = gf.BitLength / 8u;
+            byte[] b = new byte[bcount];
+            var bits = gf._dat;
+            for (uint i = bcount - 1; i >= 0; i--)
+            {
+                b[i] = (byte)(bits & 0xFF);
+                bits >>= 8;
+            }
+            return b;
+        }
+
+        public static implicit operator GF(byte[] bs)
+        {
+            ulong bits = 0;
+            for (int i = 0; i < bs.Length; i++)
+            {
+                bits |= bs[i];
+                bits <<= 8;
+            }
+            return new ((uint)bs.Length << 3, bits);
+        }
+
         public static explicit operator byte(GF gf)
         {
             return (byte)gf._dat;
