@@ -13,7 +13,7 @@ using Cider.IO;
 
 namespace Cider.Server
 {
-    internal class CommunicateServer : IDisposable
+    public class CommunicateServer : IDisposable
     {
         #region Field
 
@@ -218,11 +218,16 @@ namespace Cider.Server
             ApplicationService.HashLength = (int)RuntimeArgs.Config.HashAlgorithm;
         }
 
-        protected static GFMatrix ConvertToMatrix(byte[] bytes)
+        protected static GFMatrix ConvertToMatrix(Stream stream)
         {
-            int row = bytes.Length / RuntimeArgs.Config.BlockLength;
+            long row = stream.Length / RuntimeArgs.Config.BlockLength;
             var matrix = new GFMatrix((ulong)row, 1, (uint)RuntimeArgs.Config.BlockLength);
-            throw new NotImplementedException();
+            byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
+            for (long i = 0; i < row && (stream.Read(buffer, 0, buffer.Length) != 0); i++)
+            {
+                matrix[0, (ulong)i] = buffer;
+            }
+            return matrix;
         }
     }
 }
