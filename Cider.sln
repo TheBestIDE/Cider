@@ -19,16 +19,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ShareClasses", "ShareClasse
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Extension", "EnumExtension\Extension.shproj", "{3DAC192B-717E-4447-814A-EF4734FF4F36}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cider.Test", "Cider.Test\Cider.Test.csproj", "{D7AC663F-549C-4A22-A050-95D22E31060D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cider.IO", "Cider.IO\Cider.IO.csproj", "{A34A34C7-D4A5-4D3C-B22E-A70092F2789A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cider.IO", "Cider.IO\Cider.IO.csproj", "{A34A34C7-D4A5-4D3C-B22E-A70092F2789A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cider.Hash", "Cider.Hash\Cider.Hash.csproj", "{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cider.Hash", "Cider.Hash\Cider.Hash.csproj", "{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cider.Tests", "Cider.ServerTests\Cider.Tests.csproj", "{BFAAEBC5-0ABC-45A7-81F2-217EBCBE9806}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		EnumExtension\EnumExtension.projitems*{3dac192b-717e-4447-814a-ef4734ff4f36}*SharedItemsImports = 13
 		EnumExtension\EnumExtension.projitems*{794ebc0b-0a76-4810-9c3b-9d39d8a02216}*SharedItemsImports = 5
+		EnumExtension\EnumExtension.projitems*{f70a263e-fd2c-4627-bb7d-dbb582efee41}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,10 +56,6 @@ Global
 		{794EBC0B-0A76-4810-9C3B-9D39D8A02216}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{794EBC0B-0A76-4810-9C3B-9D39D8A02216}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{794EBC0B-0A76-4810-9C3B-9D39D8A02216}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D7AC663F-549C-4A22-A050-95D22E31060D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D7AC663F-549C-4A22-A050-95D22E31060D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D7AC663F-549C-4A22-A050-95D22E31060D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D7AC663F-549C-4A22-A050-95D22E31060D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A34A34C7-D4A5-4D3C-B22E-A70092F2789A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A34A34C7-D4A5-4D3C-B22E-A70092F2789A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A34A34C7-D4A5-4D3C-B22E-A70092F2789A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -67,6 +64,10 @@ Global
 		{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BFAAEBC5-0ABC-45A7-81F2-217EBCBE9806}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BFAAEBC5-0ABC-45A7-81F2-217EBCBE9806}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BFAAEBC5-0ABC-45A7-81F2-217EBCBE9806}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BFAAEBC5-0ABC-45A7-81F2-217EBCBE9806}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
