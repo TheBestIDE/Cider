@@ -122,12 +122,17 @@ namespace Cider.Net
             Send(ToBytes(number));
         }
 
-        public override void SendLinearResult(byte[] data)
+        public override void SendLinearResult(Stream stream)
         {
             Head.SetOption(ApplicationOption.SendLinearResult);
-            Head.DataLength = (uint)data.Length;
+            Head.DataLength = (uint)stream.Length;
             Send(Head.GetBytes());
-            Send(data);
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = stream.Read(buffer, 0, buffer.Length)) != 0)
+            {
+                Send(buffer, 0, count);
+            }
         }
 
         public override void SendFile(Stream stream)
@@ -183,8 +188,8 @@ namespace Cider.Net
                     throw new LackDataBytesException();  // 收到的字节数有误
                 }
             }
-
-            return EnCode.GetString(mStream.GetBuffer());
+            StreamReader sr = new (mStream, EnCode ?? Encoding.UTF8);
+            return sr.ReadToEnd();
         }
 
         /// <summary>接收哈希列表</summary>
@@ -249,7 +254,8 @@ namespace Cider.Net
         /// <exception cref="LackLinearResultException"></exception>
         /// <exception cref="LackHeadBytesException"></exception>
         /// <exception cref="OperationMatchException"></exception>
-        public override byte[] ReceiveLinearResult()
+        /// <returns>存储字节的流</returns>
+        public override Stream ReceiveLinearResult()
         {
             ApplicationHead head = ReceiveHead(ApplicationOption.SendLinearResult);
             
@@ -275,7 +281,7 @@ namespace Cider.Net
                 }
             }
 
-            return mStream.GetBuffer();
+            return mStream;
         }
 
         /// <summary>

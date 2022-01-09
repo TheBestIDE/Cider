@@ -9,159 +9,17 @@ using System.Net;
 namespace Cider.Net
 {
     /// <summary>
-    /// 8bits选项
-    /// 前四bits:
-    /// 1:命令 2:上传 3:下载 4:错误位
-    /// 
+    /// 应用层抽象类
     /// </summary>
-    public enum ApplicationOption : byte
-    {
-        /// <summary>
-        /// 发送文件名
-        /// </summary>
-        SendFileName = 0x60,
-
-        /// <summary>
-        /// 发送文件
-        /// </summary>
-        SendFile = 0x20,
-        /// <summary>
-        /// 发送文件不存在或损坏
-        /// </summary>
-        SendFileNotExist = 0x30,
-
-        /// <summary>
-        /// 发送哈希值列表
-        /// </summary>
-        SendHashList = 0x40,
-        /// <summary>
-        /// 服务端返回上传的数量
-        /// </summary>
-        SendReturnNumber = 0x41,
-        /// <summary>
-        /// 发送线性表达式计算结果
-        /// </summary>
-        SendLinearResult = 0x42,
-
-        /// <summary>请求指令</summary>
-        RequestCommand = 0x80,
-    }
-
-    public enum ApplicationRequestCommand : byte
-    {
-        None = 0,
-        /// <summary>上载</summary>
-        Upload = 1,
-        /// <summary>下载</summary>
-        Download = 2,
-    }
-
-    /// <summary>
-    /// 应用层头部
-    /// </summary>
-    public class ApplicationHead
-    {
-        public byte Option { get; set; }
-
-        public uint DataLength { get; set; }
-
-        public void SetOption(ApplicationOption opion)
-        {
-            Option = (byte)opion;
-        }
-
-        /// <summary>
-        /// 将头部信息转化为字节序列
-        /// </summary>
-        public byte[] GetBytes()
-        {
-            byte[] byteArray = new byte[5];
-            byteArray[0] = Option;
-            // 小端法存储长度信息
-            // 低字节存放低位数据
-            uint length = DataLength;
-            for (int i = 0; i < 4; i++)
-            {
-                byteArray[i + 1] = (byte)(length & 0xFF);
-                length >>= 8;    // 下一个高位字节
-            }
-
-            return byteArray;
-        }
-
-        /// <summary>
-        /// 从字节数组中读取头部信息
-        /// </summary>
-        /// <exception cref="ArgumentException"></exception>
-        public static ApplicationHead CreateFromBytes(byte[] bArray)
-        {
-            ApplicationHead head = new ApplicationHead(); 
-            if (bArray.Length >= 5)
-            {
-                head.Option = bArray[0];
-                head.DataLength = 0;
-                for (int i = 4; i > 0; i--)
-                {
-                    head.DataLength |= bArray[i];
-                    head.DataLength <<= 8;
-                }
-            }
-            else
-            {
-                throw new ArgumentException("需要的数组长度至少为5");
-            }
-
-            return head;
-        }
-    }
-
-    /// <summary>数据报缺失字节</summary>
-    public class LackBytesException : Exception
-    {
-        public LackBytesException(){}
-        public LackBytesException(string mes) : base(mes){}
-    }
-
-    /// <summary>数据报头部缺失字节</summary>
-    public class LackHeadBytesException : LackBytesException
-    {
-        public LackHeadBytesException()
-        {
-        }
-
-        public LackHeadBytesException(string mes) : base(mes)
-        {
-        }
-    }
-
-    /// <summary>数据报数据部分缺失字节</summary>
-    public class LackDataBytesException : LackBytesException
-    {
-        public LackDataBytesException()
-        {
-        }
-
-        public LackDataBytesException(string mes) : base(mes)
-        {          
-        }
-    }
-
-    public class LackLinearResultException : LackDataBytesException
-    {
-        public LackLinearResultException() { }
-        public LackLinearResultException(string mes) : base(mes) { }
-    }
-
-    /// <summary>头部指示操作与请求操作不匹配</summary>
-    public class OperationMatchException : Exception 
-    {
-        public OperationMatchException(){}
-        public OperationMatchException(string mes) : base(mes){}
-    }
-
     public abstract class ApplicationLayer : IDisposable
     {
+        #region Property
+
         public abstract ApplicationHead Head { get; protected set; }
+
+        #endregion
+
+        #region Method
 
         /// <summary>
         /// 解析头部
@@ -264,7 +122,7 @@ namespace Cider.Net
         /// <summary>
         /// 发送线性表达式计算结果
         /// </summary>
-        public abstract void SendLinearResult(byte[] data);
+        public abstract void SendLinearResult(Stream stream);
 
         /// <summary>
         /// 使用流发送文件
@@ -294,7 +152,7 @@ namespace Cider.Net
         /// <summary>
         /// 接收线性表达式计算结果
         /// </summary>
-        public abstract byte[] ReceiveLinearResult();
+        public abstract Stream ReceiveLinearResult();
 
         /// <summary>
         /// 接收文件
@@ -303,5 +161,6 @@ namespace Cider.Net
 
         public abstract void Dispose();
 
+        #endregion
     }
 }
