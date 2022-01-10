@@ -216,16 +216,20 @@ namespace Cider.Server
         {
             ApplicationService.EnCode = RuntimeArgs.Config.EnCoding;
             ApplicationService.HashLength = (int)RuntimeArgs.Config.HashAlgorithm;
+            ApplicationService.BlockLength = RuntimeArgs.Config.BlockLength;
         }
 
         protected static GFMatrix ConvertToMatrix(Stream stream)
         {
+            // 由于上传前客户端已填充
+            // 故认为客户端上传的字节流是能被完整分块的
+            // 这里直接整除
             long row = stream.Length / RuntimeArgs.Config.BlockLength;
             var matrix = new GFMatrix((ulong)row, 1, (uint)RuntimeArgs.Config.BlockLength);
             byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
             for (long i = 0; i < row && (stream.Read(buffer, 0, buffer.Length) != 0); i++)
             {
-                matrix[0, (ulong)i] = buffer;
+                matrix[(ulong)i, 0] = buffer;
             }
             return matrix;
         }
