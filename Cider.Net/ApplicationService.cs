@@ -29,7 +29,12 @@ namespace Cider.Net
         /// <summary>
         /// 哈希字段的长度
         /// </summary>
-        public static int HashLength { get; set; }
+        public static int HashLength { get; set; } = 0;
+
+        /// <summary>
+        /// 分块长度
+        /// </summary>
+        public static int BlockLength { get; set; } = 0;
 
         /// <summary>
         /// 服务是否可使用
@@ -38,7 +43,7 @@ namespace Cider.Net
         {
             get
             {
-                return (EnCode is not null) && (HashLength != 0);
+                return (EnCode is not null) && (HashLength != 0) && (BlockLength != 0);
             }
         }
 
@@ -124,8 +129,9 @@ namespace Cider.Net
 
         public override void SendLinearResult(Stream stream)
         {
+            CheckIfInit();
             Head.SetOption(ApplicationOption.SendLinearResult);
-            Head.DataLength = (uint)stream.Length;
+            Head.DataLength = (uint)(stream.Length / BlockLength);  // 标识文件块数
             Send(Head.GetBytes());
             byte[] buffer = new byte[8192];
             int count;
@@ -137,10 +143,11 @@ namespace Cider.Net
 
         public override void SendFile(Stream stream)
         {
+            CheckIfInit();
             if (stream.CanRead)
             {
                 Head.SetOption(ApplicationOption.SendFile);
-                Head.DataLength = (uint)stream.Length;
+                Head.DataLength = (uint)(stream.Length / BlockLength);  // 标识文件块数
                 Send(Head.GetBytes());
                 byte[] buffer = new byte[8192];
                 int count;
@@ -257,12 +264,13 @@ namespace Cider.Net
         /// <returns>存储字节的流</returns>
         public override Stream ReceiveLinearResult()
         {
+            CheckIfInit();
             ApplicationHead head = ReceiveHead(ApplicationOption.SendLinearResult);
             
-            byte[] buf = new byte[1024];    // 缓冲区
+            byte[] buf = new byte[8192];    // 缓冲区
             using MemoryStream mStream = new ();
             int waitTimes = 0;  // 等待次数
-            while (mStream.Length < head.DataLength)
+            while (mStream.Length < head.DataLength * (long)BlockLength)
             {
                 if (HasData)    // 有数据可读取
                 {
@@ -289,15 +297,20 @@ namespace Cider.Net
         /// </summary>
         /// <exception cref="LackHeadBytesException"></exception>
         /// <exception cref="OperationMatchException"></exception>
-        /// <returns>读取文件的流</returns>
-        public override Stream? ReceiveFile()
+        /// <param name="stream">读取文件的流</param>
+        /// <returns>文件块的数量</returns>
+        public override uint ReceiveFile(out Stream? stream)
         {
             ApplicationHead head = ReceiveHead();
             if (head.Option == (byte)ApplicationOption.SendFileNotExist)
-                return null;
+            {
+                stream = null;
+                return 0;
+            }
             if (head.Option != (byte)ApplicationOption.SendFile)
                 throw new OperationMatchException();
-            return nStream;
+            stream = nStream;
+            return head.DataLength;
         }
 
         public override void Dispose()

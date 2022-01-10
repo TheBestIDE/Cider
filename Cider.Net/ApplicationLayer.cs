@@ -157,7 +157,8 @@ namespace Cider.Net
         /// <summary>
         /// 接收文件
         /// </summary>
-        public abstract Stream? ReceiveFile();
+        public abstract uint ReceiveFile(out Stream? stream);
+
 
         public abstract void Dispose();
 
