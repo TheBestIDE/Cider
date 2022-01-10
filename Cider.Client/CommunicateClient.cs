@@ -14,6 +14,13 @@ namespace Cider.Client
 
         protected FileBlockPadding padding;
 
+        static CommunicateClient()
+        {
+            ApplicationService.HashLength = (int)RuntimeArgs.Config.HashAlgorithm;
+            ApplicationService.BlockLength = RuntimeArgs.Config.BlockLength;
+            ApplicationService.EnCode = RuntimeArgs.Config.EnCoding;
+        }
+
         public CommunicateClient(string ip)
         {
             var ipAddress = IPAddress.Parse(ip);
@@ -49,9 +56,20 @@ namespace Cider.Client
                 // 6.上传计算结果
                 appClient.SendLinearResult(stream);
             }
-            catch
+            catch (SocketException se)
             {
-
+                #if DEBUG
+                Console.WriteLine("Socket错误代码:{0}", se.ErrorCode);
+                #endif
+                string errMes = MatchSocketErrorCode(se.ErrorCode);
+                Console.WriteLine(errMes);
+            }
+            catch (Exception e)
+            {
+                #if DEBUG
+                Console.WriteLine(e.StackTrace);
+                #endif
+                Console.WriteLine("网络错误");
             }
         }
 
@@ -59,16 +77,9 @@ namespace Cider.Client
         {
             path ??= "./";
             path = HasSeparatorEnd(path) ? (path + fileName) : path;
-            // 检查文件存在性
-            if (File.Exists(path))
-            {
-                Console.Write("{0}:该文件已存在，是否覆盖文件？[y/n]", path);
-                string? isCover = Console.ReadLine();
-                isCover?.ToLower();
-                // 不覆盖文件
-                if (isCover is null || (isCover != "yes" && isCover != "y"))
-                    return;     // 返回
-            }
+            // 不允许覆盖文件 取消下载
+            if (!IsCoverFile(path))
+                return;
 
             try
             {
@@ -83,41 +94,65 @@ namespace Cider.Client
                 appClient.SendFileName(fileName);
 
                 // 3.接收文件
-                Stream? stream = appClient.ReceiveFile();
-                if (stream is null || !stream.CanRead)
+                Stream? stream = null;
+                uint block_num = appClient.ReceiveFile(out stream);    // 文件块数量
+                // 判断文件存在性
+                // 文件不存在
+                if (stream is null || !stream.CanRead || block_num == 0)
                 {
                     Console.WriteLine("{0}:文件不存在", fileName);
+                    return;
                 }
-                else
+                // 文件存在
+                try
                 {
-                    try
+                    // 创建新文件
+                    using FileStream fs = File.Open(path, FileMode.OpenOrCreate);
+                    // 设置缓冲区
+                    byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
+                    // 计算文件大小
+                    long file_length = (long)block_num * (long)RuntimeArgs.Config.BlockLength;
+
+                    int count;  // 保存每次读取的字节数
+                    // 读取除最后一个块以外的所有块写入文件
+                    long ttl_rd_cnt = file_length - RuntimeArgs.Config.BlockLength; // 总共需要读取的字节数
+                    long wrt_cnt = 0;   // 已写入文件的字节数
+                    while ((count = stream.Read(buffer, 0, (int)Min(ttl_rd_cnt - wrt_cnt, buffer.Length))) != 0)
                     {
-                        // 创建新文件
-                        using FileStream fs = File.Open(path, FileMode.OpenOrCreate);
-                        // 设置缓冲区
-                        byte[] buffer = new byte[Max(8192, RuntimeArgs.Config.BlockLength)];
-                        int count;  // 保存每次读取的字节数
-                        while ((count = stream.Read(buffer, 0, buffer.Length)) != 0)
-                        {
-                            fs.Write(buffer, 0 ,count);
-                        }
+                        fs.Write(buffer, 0 ,count);
+                        wrt_cnt += count;
                     }
-                    catch (DirectoryNotFoundException)
+
+                    // 读取最后一个块写满buffer
+                    int al_rd_ct = 0;   // 已读取的字节数 
+                    while ((count = stream.Read(buffer, al_rd_ct, buffer.Length - al_rd_ct)) != 0)
                     {
-                        Console.WriteLine("{0}:目录不存在", path);
+                        al_rd_ct += count;
                     }
-                    catch (UnauthorizedAccessException)
-                    {
-                        Console.WriteLine("{0}:没有访问权限", path);
-                    }
-                    catch (Exception e)
-                    {
-                        #if DEBUG
-                        Console.WriteLine(e.StackTrace);
-                        #endif
-                        Console.WriteLine("IO错误");
-                    }
+
+                    int efct_cnt = padding.DePadding(buffer);   // 有效字节数
+                    fs.Write(buffer, 0, efct_cnt);
                 }
+                catch (DirectoryNotFoundException dnfe)
+                {
+                    Console.WriteLine("{0}:目录不存在", dnfe.Message);
+                }
+                catch (UnauthorizedAccessException uae)
+                {
+                    Console.WriteLine("{0}:没有访问权限", uae.Message);
+                }
+                catch (PaddingEndException)
+                {
+                    Console.WriteLine("{0}:下载时遇到未知填充结尾", fileName);
+                }
+                catch (Exception e)
+                {
+                    #if DEBUG
+                    Console.WriteLine(e.StackTrace);
+                    #endif
+                    Console.WriteLine("IO错误");
+                }
+
             }
             catch (SocketException se)
             {
@@ -160,11 +195,10 @@ namespace Cider.Client
             {
                 hashs.Add(hashHelper.Compute(buffer));
             }
-            if (count != 0)
-            {
-                padding.Padding(buffer);
-                hashs.Add(hashHelper.Compute(buffer));
-            }
+            // 无论是否为完整的块 都做padding
+            // 若为完整块 Padding一整个块在最后
+            padding.Padding(buffer, count);
+            hashs.Add(hashHelper.Compute(buffer));
             return hashs.ToArray();
         }
 
@@ -195,24 +229,28 @@ namespace Cider.Client
 
             // 完整的块个数
             var completeBlockCount = fs.Length / (RuntimeArgs.Config.BlockLength >> 3);
-            // 是否能被完整分块
-            // 若文件字节数能整除块长 则文件能被完整分块
-            var IsComplete = fs.Length % (RuntimeArgs.Config.BlockLength >> 3) == 0;
             // 文件块数
-            // 若不能被完整分块 则在完整块数上+1
-            var blockCount = IsComplete ? completeBlockCount : completeBlockCount + 1;
+            // 无论文件是否能被完整分块 都需要Padding
+            // 故真正上传的块数等于完整块数量+1
+            var blockCount = completeBlockCount + 1;
 
             VandermondeEnumerator vdmd = new(count, blockCount, (uint)RuntimeArgs.Config.BlockLength);
+            // 线性表达式结果为count * 1的矩阵
+            // 计算结果按顺序写入字节流
             for (int i = 0; i < count; i++)
             {
                 byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
                 var linearItem = new GF((uint)RuntimeArgs.Config.BlockLength, 0);   // 保存当前线性表达式计算的中间结果
+                // 计算第i行的结果
                 for (int j = 0; j < blockCount ; j++)
                 {
                     int c = fs.Read(buffer, 0, RuntimeArgs.Config.BlockLength); // 从文件中读取字节
+                    // 块不完整需要填充
+                    // 其中包含了文件能被完整分块情况 此时在最后直接padding整个块
                     if (c < buffer.Length)
-                        padding.Padding(buffer);
-                    vdmd.MoveNext();
+                        padding.Padding(buffer, c);
+                    
+                    vdmd.MoveNext();    // 读取元素前需要移到下一个块
                     var gf = buffer * vdmd.Current; // 矩阵对应元素相乘
                     linearItem += gf;   // 加上元素乘法结果
                 }
@@ -222,9 +260,20 @@ namespace Cider.Client
             return stream;
         }
 
-        protected GFMatrix ConvertToMatrix(byte[] buffer)
+        /// <summary>是否能够覆盖指定路径文件</summary>
+        protected bool IsCoverFile(string path)
         {
-            throw new NotImplementedException();
+            // 文件存在则询问
+            if (File.Exists(path))
+            {
+                Console.Write("{0}:该文件已存在，是否覆盖文件？[y/n]", path);
+                string? isCover = Console.ReadLine();
+                isCover?.ToLower();
+                // 不覆盖文件
+                if (isCover is null || isCover != "yes" || isCover != "y")
+                    return false;     // 返回
+            }
+            return true;
         }
 
         protected static bool HasSeparatorEnd(string path)
@@ -241,6 +290,11 @@ namespace Cider.Client
         private static int Max(int value1, int value2)
         {
             return value1 > value2 ? value1 : value2;
+        }
+
+        private static long Min(long value1, long value2)
+        {
+            return value1 < value2 ? value1 : value2;
         }
     }
 }
