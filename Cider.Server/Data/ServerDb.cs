@@ -14,7 +14,6 @@ namespace Cider.Server.Data
 
         protected static string DbPassword { get; } = "Cider123456";
 
-        #pragma warning disable 8618
         static ServerDb()
         {
             var sqlConn = CreateConnection();

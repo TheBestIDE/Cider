@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Cider.Tests
+namespace Cider.Server.Tests
 {
     [TestClass()]
     public class CommunicateServerTests

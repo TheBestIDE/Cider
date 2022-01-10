@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cider.IO", "Cider.IO\Cider.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cider.Hash", "Cider.Hash\Cider.Hash.csproj", "{E2C645F8-640A-45E3-9FD1-FC42E3263A4A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cider.Tests", "Cider.ServerTests\Cider.Tests.csproj", "{BFAAEBC5-0ABC-45A7-81F2-217EBCBE9806}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Cider.Tests", "Cider.ServerTests\Cider.Tests.csproj", "{BFAAEBC5-0ABC-45A7-81F2-217EBCBE9806}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

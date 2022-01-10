@@ -14,7 +14,13 @@ namespace Cider.Math.Tests
         [TestMethod()]
         public void VandermondeEnumeratorTest()
         {
-            Assert.Fail();
+            VandermondeEnumerator ve = new(2, 3, 8);
+            Assert.IsNotNull(ve);
+            Assert.AreEqual(ve.RowNumber, 0);
+            Assert.AreEqual(ve.ColumnNumber, -1);
+            ve.MoveNext();
+            Assert.AreEqual(ve.RowNumber, 0);
+            Assert.AreEqual(ve.ColumnNumber, 0);
         }
 
         [TestMethod()]
@@ -31,7 +37,7 @@ namespace Cider.Math.Tests
             ve.Reset();
             Assert.IsTrue(ve.MoveNext());
             Assert.IsTrue(ve.MoveNext());
-            Assert.AreEqual(ve.Current, ori_current);
+            Assert.AreEqual((ulong)ve.Current, (ulong)ori_current);
         }
 
         [TestMethod()]
@@ -48,15 +54,14 @@ namespace Cider.Math.Tests
         }
 
         [TestMethod()]
-        public void DisposeTest()
-        {
-            Assert.Fail();
-        }
-
-        [TestMethod()]
         public void GetEnumeratorTest()
         {
-            Assert.Fail();
+            VandermondeEnumerator ve = new(2, 3, 8);
+            var e = ve.GetEnumerator();
+            ve.MoveNext();
+            Assert.IsNotNull(e);
+            Assert.IsTrue(e.MoveNext());
+            Assert.AreEqual((ulong)ve.Current, (ulong)ve.Current);
         }
     }
 }

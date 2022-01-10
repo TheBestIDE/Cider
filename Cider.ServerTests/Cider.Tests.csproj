@@ -15,7 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Cider.Client\Cider.Client.csproj" />
     <ProjectReference Include="..\Cider.Compute\Cider.Math.csproj" />
+    <ProjectReference Include="..\Cider.Net\Cider.Net.csproj" />
     <ProjectReference Include="..\Cider.Server\Cider.Server.csproj" />
   </ItemGroup>
 

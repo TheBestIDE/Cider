@@ -16,7 +16,7 @@ namespace Cider.Client
         {
             if (offset < block.Length)
                 block[offset] = 0x80;
-            for (int i = offset; i < block.Length; i++)
+            for (int i = offset + 1; i < block.Length; i++)
             {
                 block[i] = 0x00;
             }

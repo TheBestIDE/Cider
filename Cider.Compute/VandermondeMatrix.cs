@@ -115,6 +115,7 @@ namespace Cider.Math
         {
             RowNumber = 0;
             ColumnNumber = -1;
+            Current = new GF(BitLength, 1);
             alpha = new GF(BitLength, 1);
         }
 
