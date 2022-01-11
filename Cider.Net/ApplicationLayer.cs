@@ -33,7 +33,7 @@ namespace Cider.Net
                 throw new LackHeadBytesException();  // 收到的头部字节不完整
 
             var head = ApplicationHead.CreateFromBytes(bhead);
-            if (head.Option != (byte)ApplicationOption.SendLinearResult)
+            if (head.Option != (byte)option)
                 throw new OperationMatchException();  // 收到的数据报不是该操作
 
             return head;

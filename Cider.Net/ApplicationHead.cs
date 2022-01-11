@@ -52,8 +52,8 @@ namespace Cider.Net
                 head.DataLength = 0;
                 for (int i = 4; i > 0; i--)
                 {
-                    head.DataLength |= bArray[i];
                     head.DataLength <<= 8;
+                    head.DataLength |= bArray[i];
                 }
             }
             else
