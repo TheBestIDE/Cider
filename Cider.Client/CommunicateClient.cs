@@ -224,7 +224,7 @@ namespace Cider.Client
             // 耗时操作
             // 使用线程安全的流保存计算结果
             // 保证异步操作的线程安全性
-            Stream stream = new ThreadSafeMemoryStream(count * RuntimeArgs.Config.BlockLength);
+            Stream stream = new ThreadSafeBufferStream(count * RuntimeArgs.Config.BlockLength);
             using FileStream fs = File.Open(path, FileMode.Open, FileAccess.Read);
 
             // 完整的块个数
