@@ -16,7 +16,7 @@ namespace Cider.Client
 
         static CommunicateClient()
         {
-            ApplicationService.HashLength = (int)RuntimeArgs.Config.HashAlgorithm;
+            ApplicationService.HashByteLength = (int)RuntimeArgs.Config.HashAlgorithm / 8;
             ApplicationService.BlockLength = RuntimeArgs.Config.BlockLength;
             ApplicationService.EnCode = RuntimeArgs.Config.EnCoding;
         }

@@ -29,7 +29,7 @@ namespace Cider.Net
         /// <summary>
         /// 哈希字段的长度
         /// </summary>
-        public static int HashLength { get; set; } = 0;
+        public static int HashByteLength { get; set; } = 0;
 
         /// <summary>
         /// 分块长度
@@ -43,7 +43,7 @@ namespace Cider.Net
         {
             get
             {
-                return (EnCode is not null) && (HashLength != 0) && (BlockLength != 0);
+                return (EnCode is not null) && (HashByteLength != 0) && (BlockLength != 0);
             }
         }
 
@@ -195,6 +195,7 @@ namespace Cider.Net
                     throw new LackDataBytesException();  // 收到的字节数有误
                 }
             }
+            mStream.Position = 0;
             StreamReader sr = new (mStream, EnCode ?? Encoding.UTF8);
             return sr.ReadToEnd();
         }
@@ -210,7 +211,7 @@ namespace Cider.Net
             var head = ReceiveHead(ApplicationOption.SendHashList);
 
             string[] hashs = new string[head.DataLength];   // 哈希列表
-            byte[] buf = new byte[HashLength << 1];     // 哈希一个字节用两个十六进制显示的字符表示
+            byte[] buf = new byte[HashByteLength << 1];     // 哈希一个字节用两个十六进制显示的字符表示
                                                         // 一个ASCII字符占一个字节
             int i = 0,  // 计数 已完整收到的哈希数量
                 waitTimes = 0;  // 等待次数
