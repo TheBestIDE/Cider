@@ -6,7 +6,7 @@ namespace Cider.Server.Handle
 {
     public class HandleService : HandleServiceBase
     {
-        protected static Random rand = new Random();
+        protected static readonly Random rand = new ();
         protected IDataProvider dataProvider = Core.Single<DataProvider>.Instance;
 
         public override void HandleDirtyBlock(BlockedFile file)
@@ -40,8 +40,9 @@ namespace Cider.Server.Handle
                     var tlong = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();    // 获取当前时间戳作为随机名
                     string path = FileIOHelper.GetFullSaveFilePath(tlong.ToString());
                     FileIOHelper.WriteFile(path, block.Data);
-                    dataProvider.SetBlockMessage(block, tlong.ToString());
+                    hash_name_dic[block.HashCode] = tlong.ToString();
                 }
+                dataProvider.SetBlocksMessage(hash_name_dic);
             }
             // 文件信息写入数据库
             dataProvider.SetFile(file);

@@ -16,6 +16,7 @@ namespace Cider.Server.Data
 
         static ServerDb()
         {
+            InitDbFile();
             var sqlConn = CreateConnection();
             CreateTables(sqlConn);
         }
@@ -24,13 +25,14 @@ namespace Cider.Server.Data
         public ServerDb()
         {
             sqlConn = CreateConnection();
+            OpenConnection(sqlConn);
         }
 
         #pragma warning disable 8602
         public Files? GetFile(string fileName)
         {
             string fSql = @"SELECT * FROM Files WHERE FileName = @FileName;";
-            OpenConnection(sqlConn);
+
             using var sqlcmd = new SqliteCommand(fSql, sqlConn);
             sqlcmd.Parameters.Add(new SqliteParameter("@FileName", fileName));
             using var result = sqlcmd.ExecuteReader();
@@ -46,8 +48,6 @@ namespace Cider.Server.Data
                 file.BlockHash.Add(result.GetString(2));
             }
 
-            CloseConnection(sqlConn);
-
             return file;
         }
 
@@ -57,8 +57,12 @@ namespace Cider.Server.Data
                                 (FileName, BlockHash)
                             VALUES
                                 (@FileName, @BlockHash)";
-            OpenConnection(sqlConn);
-            using var sqlcmd = new SqliteCommand(fSql, sqlConn);
+
+            var transaction = sqlConn.BeginTransaction();
+
+            using var sqlcmd = sqlConn.CreateCommand();
+            sqlcmd.CommandText = fSql;
+
             var param1 = new SqliteParameter("@FileName", fb.FileName);
             var param2 = new SqliteParameter()
             {
@@ -73,22 +77,23 @@ namespace Cider.Server.Data
                 sqlcmd.ExecuteNonQuery();
             }
 
-            CloseConnection(sqlConn);
+            transaction.Commit();
         }
 
         public void DeleteFile(string fileName)
         {
             string fSql = @"DELETE FROM Files WHERE FileName = @FileName";
-            OpenConnection(sqlConn);
-            using var sqlcmd = new SqliteCommand(fSql, sqlConn);
+
+            using var sqlcmd = sqlConn.CreateCommand();
+            sqlcmd.CommandText = fSql;
+            sqlcmd.Parameters.Add(new SqliteParameter("@FileName", fileName));
             sqlcmd.ExecuteNonQuery();
-            CloseConnection(sqlConn);
         }
 
         public FileBlocks? GetBlock(string hash)
         {
             string fbSql = @"SELECT * FROM FileBlocks WHERE BlockHash = @BlockHash";
-            OpenConnection(sqlConn);
+
             using var sqlcmd = new SqliteCommand(fbSql, sqlConn);
             sqlcmd.Parameters.Add(new SqliteParameter("@BlockHash", hash));
             using var result = sqlcmd.ExecuteReader();
@@ -99,7 +104,6 @@ namespace Cider.Server.Data
                                     BlockFileName = result.GetString(1)
                                 }
                                 : null;
-            CloseConnection(sqlConn);
             return fb;
         }
 
@@ -110,24 +114,74 @@ namespace Cider.Server.Data
                             VALUES
                                 (@BlockHash, @BlockFileName)";
             
-            OpenConnection(sqlConn);
-            
             using var sqlcmd = new SqliteCommand(fbSql, sqlConn);
             sqlcmd.Parameters.Add(new SqliteParameter("@BlockHash", fb.BlockHash));
             sqlcmd.Parameters.Add(new SqliteParameter("@BlockFileName", fb.BlockFileName));
             sqlcmd.ExecuteNonQuery();
+        }
 
-            CloseConnection(sqlConn);
+        public void InsertBlocks(IEnumerable<FileBlocks> fbs)
+        {
+            string fbSql = @"INSERT INTO FileBlocks
+                                (BlockHash, BlockFileName)
+                            VALUES
+                                (@BlockHash, @BlockFileName)";
+
+            // 开启事务
+            using var transaction = sqlConn.BeginTransaction();
+            using var sqlcmd = sqlConn.CreateCommand();
+            sqlcmd.CommandText = fbSql;
+            // 创建参数
+            var param1 = new SqliteParameter()
+            {
+                ParameterName = "@BlockHash"
+            };
+            var param2 = new SqliteParameter()
+            {
+                ParameterName = "@BlockFileName"
+            };
+            sqlcmd.Parameters.Add(param1);
+            sqlcmd.Parameters.Add(param2);
+            // 写入数据
+            foreach (var fb in fbs)
+            {
+                param1.Value = fb.BlockHash;
+                param2.Value = fb.BlockFileName;
+                sqlcmd.ExecuteNonQuery();
+            }
+            //提交事务
+            transaction.Commit();
         }
 
         public void DeleteBlock(string hash)
         {
             string fbSql = @"DELETE FROM FileBlocks WHERE BlockHash = @BlockHash";
-            OpenConnection(sqlConn);
+
             using var sqlcmd = new SqliteCommand(fbSql, sqlConn);
             sqlcmd.Parameters.Add(new SqliteParameter("@BlockHash", hash));
             sqlcmd.ExecuteNonQuery();
-            CloseConnection(sqlConn);
+        }
+
+        public void DeleteBlocks(IEnumerable<string> hashs)
+        {
+            string fbSql = @"DELETE FROM FileBlocks WHERE BlockHash = @BlockHash";
+
+            using var transaction = sqlConn.BeginTransaction();
+            using var sqlcmd = sqlConn.CreateCommand();
+            sqlcmd.CommandText = fbSql;
+
+            var param = new SqliteParameter()
+            {
+                ParameterName = "@BlockHash"
+            };
+            sqlcmd.Parameters.Add(param);
+
+            foreach (var hash in hashs)
+            {
+                param.Value = hash;
+                sqlcmd.ExecuteNonQuery();
+            }
+            transaction.Commit();
         }
 
         public string[]? CombineFilesAndBlocks(string fileName)
@@ -139,7 +193,6 @@ namespace Cider.Server.Data
                             JOIN 
                                 FileBlocks
                             ON f.BlockHash = FileBlocks.BlockHash";
-            OpenConnection(sqlConn);
             using var sqlcmd = new SqliteCommand(sql, sqlConn);
             sqlcmd.Parameters.Add(new SqliteParameter("@FileName", fileName));
             using var result = sqlcmd.ExecuteReader();
@@ -156,6 +209,34 @@ namespace Cider.Server.Data
             CloseConnection(sqlConn);
         }
 
+        /// <summary>打开连接</summary>
+        public static void OpenConnection(SqliteConnection sqlConn)
+        {
+            if (sqlConn.State != System.Data.ConnectionState.Open)
+                sqlConn.Open();
+        }
+
+        public static bool IsOpen(SqliteConnection sqlConn)
+        {
+            return sqlConn.State == System.Data.ConnectionState.Open;
+        }
+
+        /// <summary>关闭连接</summary>
+        public static void CloseConnection(SqliteConnection sqlConn)
+        {
+            if (sqlConn.State != System.Data.ConnectionState.Closed)
+                sqlConn.Close();
+        }
+
+        protected static void InitDbFile()
+        {
+            string dbFile = "./" + DbFileDirectory + "/" + DbFileName;
+            if (!Directory.Exists("./" + DbFileDirectory))
+                Directory.CreateDirectory("./" + DbFileDirectory);
+            if (!File.Exists(dbFile))
+                File.Create(dbFile).Dispose();
+        }
+
         /// <summary>创建连接</summary>
         protected static SqliteConnection CreateConnection()
         {
@@ -169,41 +250,21 @@ namespace Cider.Server.Data
             return new SqliteConnection(connString);
         }
 
-        /// <summary>打开连接</summary>
-        protected static void OpenConnection(SqliteConnection sqlConn)
-        {
-            if (sqlConn.State != System.Data.ConnectionState.Open)
-                sqlConn.Open();
-        }
-
-        protected static bool IsOpen(SqliteConnection sqlConn)
-        {
-            return sqlConn.State == System.Data.ConnectionState.Open;
-        }
-
-        /// <summary>关闭连接</summary>
-        protected static void CloseConnection(SqliteConnection sqlConn)
-        {
-            if (sqlConn.State != System.Data.ConnectionState.Closed)
-                sqlConn.Close();
-        }
-
         /// <summary>创建表</summary>
         protected static void CreateTables(SqliteConnection sqlConn)
         {
             // 文件信息表
             var ftSql = @"
                         CREATE TABLE IF NOT EXISTS Files (
-                            [Id] INTEGER NOT NULL AUTOINCREMENT, 
-                            [FileName] TEXT NOT NULL,
-                            [BlockHash] TEXT NOT NULL,
-                            PRIMARY KEY (Id)
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                            FileName TEXT NOT NULL,
+                            BlockHash TEXT NOT NULL
                         );";
             // 文件块表
             var fbtSql = @"
                         CREATE TABLE IF NOT EXISTS FileBlocks (
-                            [BlockHash] TEXT NOT NULL, 
-                            [BlockFileName] TEXT NOT NULL,
+                            BlockHash TEXT NOT NULL, 
+                            BlockFileName TEXT NOT NULL,
                             PRIMARY KEY (BlockHash)
                         );";
             // 创建表

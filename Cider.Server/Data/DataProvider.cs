@@ -12,9 +12,17 @@ namespace Cider.Server.Data
             Db = Core.Single<ServerDb>.Instance;
         }
 
-        public string[] FindNotExistHash(string[] hashs)
+        public string[]? FindNotExistHash(string[] hashs)
         {
-            throw new NotImplementedException();
+            List<string> result = new List<string>();
+            foreach (string hash in hashs)
+            {
+                var rcv = Db.GetBlock(hash);
+                if (rcv == null)
+                    result.Add(hash);
+            }
+
+            return result.Count > 0 ? result.ToArray() : null;
         }
 
         public void SetFile(BlockedFile file)
@@ -35,6 +43,20 @@ namespace Cider.Server.Data
                 BlockHash = fb.HashCode
             };
             Db.InsertBlock(fbs);
+        }
+
+        public void SetBlocksMessage(Dictionary<string, string> hash_name_dic)
+        {
+            List<FileBlocks> blocks = new ();
+            foreach (var trp in hash_name_dic)
+            {
+                blocks.Add(new FileBlocks()
+                {
+                    BlockFileName = trp.Value,
+                    BlockHash = trp.Key
+                });
+            }
+            Db.InsertBlocks(blocks);
         }
 
         #pragma warning disable 8601

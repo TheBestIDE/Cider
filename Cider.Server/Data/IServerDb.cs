@@ -10,7 +10,10 @@ namespace Cider.Server.Data
         
         public FileBlocks? GetBlock(string hash);
         public void InsertBlock(FileBlocks fb);
+        public void InsertBlocks(IEnumerable<FileBlocks> fbs);
         public void DeleteBlock(string hash);
+        public void DeleteBlocks(IEnumerable<string> hashs);
+
         public string[]? CombineFilesAndBlocks(string fileName);
     }
 }
