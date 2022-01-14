@@ -16,7 +16,7 @@ namespace Cider.Math
 
         #region Construtor
 
-        public GFMatrix(ulong row, ulong col, uint bitLength)
+        public GFMatrix(ulong row, ulong col, long bitLength)
         {
             Row = row;
             Column = col;
@@ -33,7 +33,7 @@ namespace Cider.Math
 
         public ulong Column { get; }
 
-        public uint BitLength { get; }
+        public long BitLength { get; }
 
         #endregion
 
