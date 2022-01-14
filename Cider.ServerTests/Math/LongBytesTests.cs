@@ -11,6 +11,47 @@ namespace Cider.Math.Tests
     public class LongBytesTests
     {
         [TestMethod()]
+        public void BitPositionTest()
+        {
+            LongBytes num = 0xFF010;
+            Assert.AreEqual(1, num.WordCount);
+            Assert.AreEqual(20, num.HighestBitPosition);
+        }
+
+        [TestMethod()]
+        public void CompareTest()
+        {
+            LongBytes num1 = 0xFF010;
+            LongBytes num2 = 0xFF101;
+            Assert.AreEqual(-1, LongBytes.Compare(num1, num2));
+
+            LongBytes num3 = 0xFF000;
+            Assert.AreEqual(1, LongBytes.Compare(num1, num3));
+
+            LongBytes num4 = 0xFF010;
+            Assert.AreEqual(0, LongBytes.Compare(num1, num4));
+
+            byte[] bs = new byte[16];
+            bs[7] = 0x01;
+            bs[15] = 0x10;
+            bs[14] = 0xF0;
+            bs[13] = 0x0F;
+            LongBytes num5 = new LongBytes(bs);
+            Assert.AreEqual(1, LongBytes.Compare(num5, num1));
+            Assert.IsTrue(num5 > num1);
+
+            bs[7] = 0;
+            LongBytes num6 = new LongBytes(bs);
+            Assert.AreEqual(0, LongBytes.Compare(num6, num1));
+            Assert.IsTrue(num6 == num1);
+
+            bs[15] = 0x00;
+            LongBytes num7 = new LongBytes(bs);
+            Assert.AreEqual(-1, LongBytes.Compare(num7, num1));
+            Assert.IsTrue(num7 < num1);
+        }
+
+        [TestMethod()]
         public void ByteArrayTest()
         {
             byte[] bytes = new byte[16];
@@ -28,6 +69,24 @@ namespace Cider.Math.Tests
 
             LongBytes one = new LongBytes(bytes);
             Assert.AreEqual(expectedHex, one.ToString());
+        }
+
+        [TestMethod()]
+        public void ImplicitArrayTest()
+        {
+            byte[] expected = new byte[32];
+            for (int i = 0; i < 32; i++)
+            {
+                expected[i] = (byte)i;
+            }
+
+            LongBytes num = expected;
+            byte[] rslt = num;
+
+            for (int i = 0; i < 32; i++)
+            {
+                Assert.AreEqual(expected[i], rslt[i]);
+            }
         }
 
         [TestMethod()]
