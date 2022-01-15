@@ -106,9 +106,19 @@ namespace Cider.Math
             return false;
         }
 
+        public override int GetHashCode()
+        {
+            int hashCode = 0;
+            foreach (var item in _dat)
+            {
+                hashCode ^= item.GetHashCode();
+            }
+            return hashCode;
+        }
+
         public override string ToString()
         {
-            string str = "";
+            string str = "0x";
             for (int i = 0; i < _dat.Length; i++)
             {
                 str += _dat[i].ToString("X16");
