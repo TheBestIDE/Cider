@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Cider.Math
 {
+    /// <summary>
+    /// 有限域上的矩阵
+    /// </summary>
     public class GFMatrix
     {
         #region Field
@@ -23,6 +26,27 @@ namespace Cider.Math
             BitLength = bitLength;
             matrix = new GF[Row, Column];
             InitializationMatrix();
+        }
+
+        /// <summary>
+        /// 拷贝构造函数
+        /// </summary>
+        /// <remarks>
+        /// 使用深拷贝复制每一个元素
+        /// </remarks>
+        public GFMatrix(GFMatrix mat)
+        {
+            Row = mat.Row;
+            Column = mat.Column;
+            BitLength = mat.BitLength;
+            matrix = new GF[Row, Column];
+            for (ulong i = 0; i < Row; i++)
+            {
+                for (ulong j = 0; j < Column; j++)
+                {
+                    matrix[i, j] = new (mat.matrix[i, j]);
+                }
+            }
         }
 
         #endregion
@@ -71,10 +95,88 @@ namespace Cider.Math
             return matrix[row, col];
         }
 
+        /// <summary>
+        /// 添加指定元素的浅拷贝
+        /// </summary>
+        /// <param name="row">行标</param>
+        /// <param name="col">列标</param>
+        /// <param name="gf"></param>
         public void Send(ulong row, ulong col, GF gf)
         {
             if (BitLength == gf.BitLength)
                 matrix[row, col] = gf;
+        }
+
+        /// <summary>
+        /// 添加一行的浅拷贝
+        /// </summary>
+        /// <param name="row">添加到的行标</param>
+        /// <param name="mat">源矩阵</param>
+        /// <param name="mat_row">来自源矩阵的行标</param>
+        public void SendRow(ulong row, GFMatrix mat, ulong mat_row)
+        {
+            // 该矩阵列数小于源矩阵列数
+            // 所添加到的行标超过该矩阵行数
+            // 来源矩阵行标超过源矩阵行数
+            // 超出索引
+            if (Column < mat.Column || row >= Row || mat_row >= mat.Row)
+                throw new IndexOutOfRangeException();
+            for (ulong col = 0; col < Column; col++)
+            {
+                matrix[row, col] = mat[mat_row, col];
+            }
+        }
+
+        /// <summary>
+        /// 得到该矩阵的转置矩阵
+        /// </summary>
+        /// <remarks>
+        /// 转置后的矩阵中的元素为原矩阵元素的深拷贝
+        /// </remarks>
+        /// <returns>转置矩阵</returns>
+        public GFMatrix GetTransposeMatrix()
+        {
+            GFMatrix mat = new GFMatrix(Column, Row, BitLength);
+            for (ulong i = 0; i < Column; i++)
+            {
+                for (ulong j = 0; j < Row; j++)
+                {
+                    // 深拷贝矩阵元素
+                    // 使其元素值与原矩阵中元素引用不一样
+                    mat[i, j] = new (matrix[j, i]);
+                }
+            }
+
+            return mat;
+        }
+
+        /// <summary>
+        /// 矩阵数乘
+        /// </summary>
+        public void NumebrMultipy(GF gf)
+        {
+            for (ulong i = 0; i < Row; i++)
+            {
+                for (ulong j = 0; j < Column; j++)
+                {
+                    matrix[i, j] *= gf;
+                }
+            }
+        }
+
+        #region Static Method
+
+        /// <summary>
+        /// 创建一个单位行向量
+        /// </summary>
+        /// <param name="column">指定为1的列标</param>
+        /// <param name="col_num">指定列数</param>
+        /// <param name="bitLength">有限域比特长度</param>
+        public static GFMatrix CreateIdentityRowVector(ulong column, ulong col_num, long bitLength)
+        {
+            GFMatrix mat = new GFMatrix(1, col_num, bitLength);
+            mat.matrix[0, column] = 1;
+            return mat;
         }
 
         /// <summary>
@@ -106,11 +208,6 @@ namespace Cider.Math
             {
                 throw new ArgumentException("两个矩阵行数列数不相等");
             }
-        }
-
-        public static GFMatrix operator+(GFMatrix left, GFMatrix right)
-        {
-            return Add(left, right);
         }
 
         /// <summary>
@@ -145,10 +242,17 @@ namespace Cider.Math
             }
         }
 
+        public static GFMatrix operator +(GFMatrix left, GFMatrix right)
+        {
+            return Add(left, right);
+        }
+
         public static GFMatrix operator*(GFMatrix left, GFMatrix right)
         {
             return Multipy(left, right);
         }
+
+        #endregion
 
         #endregion
 
