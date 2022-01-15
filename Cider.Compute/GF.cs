@@ -43,7 +43,7 @@ namespace Cider.Math
 
         public GF(GF num)
         {
-            _dat = num._dat;
+            _dat = new (num._dat);
             BitLength = num.BitLength;
         }
 
