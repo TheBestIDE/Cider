@@ -158,7 +158,7 @@ namespace Cider.Math
                 throw new InvalidOperationException("Matrix Determinant is 0");
 
             var invs = GetAdjointMatrix();   // 求伴随矩阵
-            invs.NumebrMultipy(dt);      // 乘上矩阵的行列式得到逆矩阵
+            invs.NumebrMultipy(dt.Inverse());   // 除以矩阵的行列式得到逆矩阵
             return invs;
         }
 

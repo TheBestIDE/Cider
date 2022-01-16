@@ -61,7 +61,7 @@ namespace Cider.Math.Tests
             }
             bytes[15] = 0b10011;
 
-            string expectedHex = "";
+            string expectedHex = "0x";
             for (int i = 0; i < 16; i++)
             {
                 expectedHex += bytes[i].ToString("X2");
@@ -117,7 +117,7 @@ namespace Cider.Math.Tests
             LongBytes one = new LongBytes(bytes);
             one <<= 3;
 
-            string expectedHex = "";
+            string expectedHex = "0x";
             for (int i = 0; i < 32; i++)
             {
                 bytes[i] <<= 3;
@@ -139,7 +139,7 @@ namespace Cider.Math.Tests
             LongBytes one = new LongBytes(bytes);
             one >>= 3;
 
-            string expectedHex = "";
+            string expectedHex = "0x";
             for (int i = 0; i < 32; i++)
             {
                 bytes[i] >>= 3;
@@ -164,7 +164,7 @@ namespace Cider.Math.Tests
             var rslt = num1 & num2;
 
             bytes[15] &= 0b10101;
-            string expectedHex = "";
+            string expectedHex = "0x";
             for (int i = 0; i < 15; i++)
             {
                 expectedHex += "00";
@@ -189,7 +189,7 @@ namespace Cider.Math.Tests
             var rslt = num1 | num2;
 
             bytes[15] |= 0b10101;
-            string expectedHex = "";
+            string expectedHex = "0x";
             for (int i = 0; i < 16; i++)
             {
                 expectedHex += bytes[i].ToString("X2");
@@ -211,7 +211,7 @@ namespace Cider.Math.Tests
             LongBytes num1 = new LongBytes(bytes);
             var rslt = ~num1;
 
-            string expectedHex = "";
+            string expectedHex = "0x";
             for (int i = 0; i < 16; i++)
             {
                 bytes[i] = (byte)~bytes[i];
@@ -228,7 +228,7 @@ namespace Cider.Math.Tests
             LongBytes num2 = 0b10101;
             ulong expected = 0b10011 ^ 0b10101;
             var rslt = num1 ^ num2;
-            Assert.AreEqual(expected.ToString("X16"), rslt.ToString());
+            Assert.AreEqual("0x" + expected.ToString("X16"), rslt.ToString());
         }
 
         [TestMethod()]
@@ -246,7 +246,7 @@ namespace Cider.Math.Tests
             var rslt = num1 ^ num2;
 
             bytes[15] ^= 0b10101;
-            string expectedHex = "";
+            string expectedHex = "0x";
             for (int i = 0; i < 16; i++)
             {
                 expectedHex += bytes[i].ToString("X2");
