@@ -164,6 +164,29 @@ namespace Cider.Math
             }
         }
 
+        #region Override
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is null)
+                return false;
+            if (obj.GetType() != this.GetType())
+                return false;
+            return this == (GFMatrix)obj;
+        }
+
+        public override int GetHashCode()
+        {
+            int code = Row.GetHashCode() ^ Column.GetHashCode() ^ BitLength.GetHashCode();
+            foreach (var gf in matrix)
+            {
+                code ^= gf.GetHashCode();
+            }
+            return code;
+        }
+
+        #endregion
+
         #region Static Method
 
         /// <summary>
@@ -242,6 +265,8 @@ namespace Cider.Math
             }
         }
 
+        #region Override Operator
+
         public static GFMatrix operator +(GFMatrix left, GFMatrix right)
         {
             return Add(left, right);
@@ -251,6 +276,32 @@ namespace Cider.Math
         {
             return Multipy(left, right);
         }
+
+        public static bool operator ==(GFMatrix left, GFMatrix right)
+        {
+            if (left.Row != right.Row
+             || left.Column != right.Column
+             || left.BitLength != right.BitLength)
+                return false;
+
+            for (ulong i = 0; i < left.Row; i++)
+            {
+                for (ulong j = 0; j < left.Column; j++)
+                {
+                    if (left[i, j] != right[i, j])
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        public static bool operator !=(GFMatrix left, GFMatrix right)
+        {
+            return !(left == right);
+        }
+
+        #endregion
 
         #endregion
 
