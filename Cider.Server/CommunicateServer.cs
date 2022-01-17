@@ -119,10 +119,14 @@ namespace Cider.Server
                 // 未初始化应用层服务
                 Console.WriteLine("Application Layer Serivce Not Initialized.");
             }
-            catch (LackLinearResultException)
+            catch (Hash.HashVerifyException)
             {
-                // 缺失线性表达式的结果
-                Console.WriteLine("Lack of Linear Result.");
+                Console.WriteLine("Fail to Verify Received Data's Hash.");
+            }
+            catch (LackFileBlocksException)
+            {
+                // 上传的文件块数量与请求的不一致
+                Console.WriteLine("Lack of File Blocks.");
                 // 处理脏块
                 // handle.HandleDirtyBlock(file);
             }
@@ -160,6 +164,8 @@ namespace Cider.Server
         /// </summary>
         /// <exception cref="LackDataBytesException"></exception>
         /// <exception cref="LackHeadBytesException"></exception>
+        /// <exception cref="Hash.HashVerifyException"></exception>
+        /// <exception cref="LackFileBlocksException"></exception>
         /// <exception cref="OperationMatchException"></exception>
         /// <exception cref="ArgumentException">未初始化应用层服务</exception>
         protected void HanldeUpload(ApplicationLayer appClient)
@@ -172,21 +178,31 @@ namespace Cider.Server
 
             // 2.接收哈希列表
             string[] hashs = appClient.ReceiveHashList();   // 接收到哈希列表
-            string[]? diffHash = handle.HandleHashList(hashs);  // 获取服务器不存在的哈希值
+            int[]? diffHash = handle.HandleHashList(hashs);  // 获取服务器不存在的哈希值
             file.BlockHashList = hashs.ToList();    // 写入哈希值列表
-            file.DifferentBlockList = diffHash?.ToList();   // 写入不存在列表
+            file.DifferentBlockPositionList = diffHash?.ToList();   // 写入不存在列表
 
             // 3.返回上传的线性表达式结果数值
             int number = diffHash?.Length ?? 0;     // 服务器上不存在的哈希值数量
-            number = handle.HandleConfuseNumber(number);    // 混淆数量
+            // r < k的情况
+            if (number != hashs.Length)
+                number = handle.HandleConfuseNumber(number);    // 混淆数量
+            // r = k无需混淆 保证 r <= k
             appClient.SendReturnNumber(number);     // 发送返回数值
 
             // 4.处理线性表达式结果
-            var result = appClient.ReceiveLinearResult();   // 接收线性表达式结果
-            var matrix = ConvertToMatrix(result);   // 转化为矩阵
-            if (matrix.Row != (ulong)number)        // 上传的线性表达式计算结果数量与请求的不一致
-                throw new LackLinearResultException();
-            file.DifferentFileBlocks = handle.HandleLinearResult(matrix);   // 处理线性表达式结果
+            using var result = appClient.ReceiveLinearResult();     // 接收线性表达式结果
+            // 需要上传的块数量等于请求的块数量
+            if (number == hashs.Length)
+            {
+                // 客户端不需要使用矩阵编码
+                // 上传的即为文件块
+                handle.HandleReadVerifyBlocks(file, result);
+            }
+            else
+            {
+                handle.HandleLinearResult(file, result);    // 处理线性表达式结果
+            }
 
             // 5.写入文件
             handle.HandleWriteFile(file);

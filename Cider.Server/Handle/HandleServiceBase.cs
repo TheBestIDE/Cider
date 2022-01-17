@@ -1,5 +1,7 @@
 using Cider.Math;
 using Cider.IO;
+using Cider.Hash;
+using Cider.Net;
 
 namespace Cider.Server.Handle
 {
@@ -8,14 +10,25 @@ namespace Cider.Server.Handle
         /// <summary>
         /// 处理哈希值列表
         /// </summary>
-        /// <returns>服务器不存在的哈希值列表</returns>
-        public abstract string[]? HandleHashList(string[] hashs);
+        /// <returns>服务器不存在的哈希值索引列表</returns>
+        public abstract int[]? HandleHashList(string[] hashs);
 
         /// <summary>
         /// 处理线性表达式结果
         /// </summary>
-        /// <param name="matrix">线性表达式结果矩阵</param>
-        public abstract FileBlock[] HandleLinearResult(GFMatrix matrix);
+        /// <param name="file">分块文件对象</param>
+        /// <param name="stream">待处理字节流</param>
+        public abstract void HandleLinearResult(BlockedFile file, Stream stream);
+
+        /// <summary>
+        /// 接受和验证文件块
+        /// </summary>
+        /// <remarks>当且仅当文件块未编码时使用此方法 即客户端请求上传的文件块数量等于服务器返回的数量</remarks>
+        /// <param name="file">分块文件对象</param>
+        /// <param name="stream">待处理字节流</param>
+        /// <exception cref="HashVerifyException"></exception>
+        /// <exception cref="LackFileBlocksException"></exception>
+        public abstract void HandleReadVerifyBlocks(BlockedFile file, Stream stream);
 
         /// <summary>
         /// 处理脏块
