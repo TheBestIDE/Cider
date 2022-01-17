@@ -30,7 +30,7 @@ namespace Cider.Math
         /// <param name="row_num">行号</param>
         /// <param name="column">列数 即行向量维度</param>
         /// <param name="bitlength">有限域比特数</param>
-        public static GFMatrix CreateRowInstance(ulong row_num, ulong column, uint bitlength)
+        public static GFMatrix CreateRowInstance(ulong row_num, ulong column, long bitlength)
         {
             GFMatrix vmatrix = new (1, column, bitlength);
             GF gf = new (bitlength, 1);

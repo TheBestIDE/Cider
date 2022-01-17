@@ -266,7 +266,7 @@ namespace Cider.Math
         {
             var bcount = gf.BitLength / 8u;
             byte[] b = new byte[bcount];
-            var bits = gf._dat;
+            var bits = new LongBytes(gf._dat);
             for (long i = bcount - 1; i >= 0; i--)
             {
                 b[i] = (byte)(bits & 0xFF);
@@ -283,7 +283,7 @@ namespace Cider.Math
                 bits |= bs[i];
                 bits <<= 8;
             }
-            return new ((uint)bs.Length << 3, bits);
+            return new (bs.Length << 3, bits);
         }
 
         public static explicit operator byte(GF gf)
