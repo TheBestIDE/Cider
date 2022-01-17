@@ -34,7 +34,7 @@ namespace Cider.Server.Data.Tests
 
             for (int i = 0; i < diff.Length; i++)
             {
-                Assert.AreEqual("BlockHash" + (i + 20), diff[i]);
+                Assert.AreEqual(i + 4, diff[i]);
             }
         }
 
