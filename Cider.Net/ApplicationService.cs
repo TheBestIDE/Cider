@@ -253,7 +253,7 @@ namespace Cider.Net
         /// <summary>
         /// 接收线性表达式计算结果
         /// </summary>
-        /// <exception cref="LackLinearResultException"></exception>
+        /// <exception cref="LackFileBlocksException"></exception>
         /// <exception cref="LackHeadBytesException"></exception>
         /// <exception cref="OperationMatchException"></exception>
         /// <returns>存储字节的流</returns>
@@ -280,7 +280,7 @@ namespace Cider.Net
                 }
                 else    // 等待超过10次 不再等待
                 {
-                    throw new LackLinearResultException();  // 收到的字节数有误
+                    throw new LackFileBlocksException();  // 收到的字节数有误
                 }
             }
 

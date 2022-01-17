@@ -39,10 +39,10 @@ namespace Cider.Net
         }
     }
 
-    public class LackLinearResultException : LackDataBytesException
+    public class LackFileBlocksException : LackDataBytesException
     {
-        public LackLinearResultException() { }
-        public LackLinearResultException(string mes) : base(mes) { }
+        public LackFileBlocksException() { }
+        public LackFileBlocksException(string mes) : base(mes) { }
     }
 
     /// <summary>头部指示操作与请求操作不匹配</summary>
