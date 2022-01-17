@@ -27,6 +27,7 @@ namespace Cider.Client
             padding = new FileBlockPadding();
             iPEndPoint = new IPEndPoint(ipAddress, RuntimeArgs.Config.ServerPort);
         }
+
         public async Task Upload(string path)
         {
             if (!File.Exists(path))
@@ -51,8 +52,19 @@ namespace Cider.Client
                 appClient.SendHashList(hashs);
                 // 4.接收返回值
                 int returnNumber = appClient.ReceiveReturnNumber();
-                // 5.异步计算线性表达式
-                Stream stream = await ComputeLinearAsync(path, returnNumber);
+                Stream stream;
+                // 5.判断需要上传的块数量是否等于请求的分块哈希值数量
+                // 相等时无需混淆 直接上传文件
+                if (returnNumber == hashs.Length)
+                {
+                    stream = await ReadFileAsync(path);
+                }
+                // 不相等时需要使用矩阵encode混淆
+                else
+                {
+                    // 异步计算线性表达式
+                    stream = await ComputeLinearAsync(path, returnNumber);
+                }
                 // 6.上传计算结果
                 appClient.SendLinearResult(stream);
             }
@@ -73,12 +85,12 @@ namespace Cider.Client
             }
         }
 
-        public void Download(string fileName, string? path)
+        public void Download(string fileName, string? path, bool isOverride)
         {
-            path ??= "./";
+            path = string.IsNullOrEmpty(path) ? "./" : path;
             path = HasSeparatorEnd(path) ? (path + fileName) : path;
             // 不允许覆盖文件 取消下载
-            if (!IsCoverFile(path))
+            if (!isOverride && !IsCoverFile(path))
                 return;
 
             try
@@ -200,6 +212,28 @@ namespace Cider.Client
             padding.Padding(buffer, count);
             hashs.Add(hashHelper.Compute(buffer));
             return hashs.ToArray();
+        }
+
+        protected async Task<Stream> ReadFileAsync(string path)
+        {
+            return await Task.Run(() => ReadFile(path));
+        }
+
+        protected Stream ReadFile(string path)
+        {
+            byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
+            using FileStream fs = File.Open(path, FileMode.Open, FileAccess.Read);
+            int count;
+            ThreadSafeBufferStream stream = new (fs.Length);
+            while ((count = fs.Read(buffer, 0, buffer.Length)) != RuntimeArgs.Config.BlockLength)
+            {
+                stream.Write(buffer, 0, count);
+            }
+            // 无论是否为完整的块 都做padding
+            // 若为完整块 Padding一整个块在最后
+            padding.Padding(buffer, count);
+            stream.Write(buffer, 0, buffer.Length);
+            return stream;
         }
 
         /// <summary>

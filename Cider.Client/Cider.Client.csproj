@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Cider.Compute\Cider.Math.csproj" />
     <ProjectReference Include="..\Cider.Global\Cider.Global.csproj" />
     <ProjectReference Include="..\Cider.IO\Cider.IO.csproj" />
