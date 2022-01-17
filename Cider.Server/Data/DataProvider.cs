@@ -12,14 +12,14 @@ namespace Cider.Server.Data
             Db = Core.Single<ServerDb>.Instance;
         }
 
-        public string[]? FindNotExistHash(string[] hashs)
+        public int[]? FindNotExistHash(string[] hashs)
         {
-            List<string> result = new List<string>();
-            foreach (string hash in hashs)
+            List<int> result = new List<int>();
+            for (int i = 0; i < hashs.Length; i++)
             {
-                var rcv = Db.GetBlock(hash);
+                var rcv = Db.GetBlock(hashs[i]);
                 if (rcv == null)
-                    result.Add(hash);
+                    result.Add(i);
             }
 
             return result.Count > 0 ? result.ToArray() : null;
@@ -70,6 +70,12 @@ namespace Cider.Server.Data
                             FileName = fileName,
                             BlockHashList = f.BlockHash
                         };
+        }
+
+        public string? ReadBlockFileName(string hash)
+        {
+            var block = Db.GetBlock(hash);
+            return block?.BlockFileName ?? null;
         }
 
         public string[]? ReadFileBlocksFileName(string fileName)

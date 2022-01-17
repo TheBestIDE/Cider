@@ -17,7 +17,7 @@ namespace Cider.IO
 
         public IList<string> BlockHashList { get; set; }
 
-        public IList<string>? DifferentBlockList { get; set; }
+        public IList<int>? DifferentBlockPositionList { get; set; }
 
         public FileBlock[]? DifferentFileBlocks { get; set; }
 
