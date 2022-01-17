@@ -15,7 +15,8 @@ namespace Cider.IO
         public FileBlock (string hash, byte[] data)
         {
             HashCode = hash;
-            Data = data;
+            Data = new byte[data.Length];
+            Array.Copy(data, 0, Data, 0, data.Length);
         }
     }
 }
