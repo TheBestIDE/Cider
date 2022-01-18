@@ -277,12 +277,7 @@ namespace Cider.Math
 
         public static implicit operator GF(byte[] bs)
         {
-            ulong bits = 0;
-            for (int i = 0; i < bs.Length; i++)
-            {
-                bits |= bs[i];
-                bits <<= 8;
-            }
+            LongBytes bits = bs;
             return new (bs.Length << 3, bits);
         }
 

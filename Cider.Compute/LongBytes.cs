@@ -18,7 +18,7 @@ namespace Cider.Math
         #region Property
 
         /// <summary>
-        /// 实际存储的以字节为单位的长度
+        /// 实际存储的信息的以字节为单位的长度
         /// </summary>
         public long ByteLength { get; private set; } = 0;
 
@@ -71,7 +71,8 @@ namespace Cider.Math
         {
             this.ByteLength = byteLength;
             long arrLength = byteLength >> 3;
-            _dat = new ulong[arrLength];
+            long rmdLength = byteLength & 7;
+            _dat = new ulong[rmdLength == 0 ? arrLength : arrLength + 1];
         }
 
         public LongBytes(long byteLength, ulong num)
@@ -390,7 +391,7 @@ namespace Cider.Math
             for (int i = 0; i < bytes.WordCount; i++)
             {
                 int j = i * WordByteLength;
-                for (int k = j; k < j + WordByteLength; k++)
+                for (int k = j; k < j + WordByteLength && k < data.Length; k++)
                 {
                     bytes._dat[i] <<= 8;
                     bytes._dat[i] |= data[k];
@@ -403,12 +404,23 @@ namespace Cider.Math
         public static implicit operator byte[](LongBytes bytes)
         {
             byte[] bs = new byte[bytes.ByteLength];
-            for (int i = 0; i < bytes.WordCount; i++)
+            for (int i = 0; i < bytes.WordCount; i++)   // 字间偏移
             {
-                int j = i * WordByteLength;
-                for (int k = 0; k < WordByteLength; k++)
+                int j = i * WordByteLength; // 已写入字节数
+                int effctByteLength = bs.Length - j;    // 剩余有效字节数
+                if (effctByteLength >= WordByteLength)
                 {
-                    bs[k + j] = (byte)(bytes._dat[i] >> ((WordByteLength - k - 1) << 3));
+                    for (int k = 0; k < WordByteLength; k++) // 字内偏移
+                    {
+                        bs[k + j] = (byte)(bytes._dat[i] >> ((WordByteLength - k - 1) << 3));
+                    }
+                }
+                else
+                {
+                    for (int k = 0; k < effctByteLength; k++)
+                    {
+                        bs[k + j] = (byte)(bytes._dat[i] >> ((effctByteLength - k - 1) << 3));
+                    }
                 }
             }
             return bs;
