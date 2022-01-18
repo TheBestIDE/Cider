@@ -142,7 +142,7 @@ namespace Cider.Server.Handle
             {
                 foreach (var block in file.DifferentFileBlocks)
                 {
-                    var tlong = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();    // 获取当前时间戳作为随机名
+                    var tlong = DateTime.Now.ToUniversalTime().Ticks;   // 获取当前时间戳作为随机名
                     string path = FileIOHelper.GetFullSaveFilePath(tlong.ToString());
                     FileIOHelper.WriteFile(path, block.Data);
                     hash_name_dic[block.HashCode] = tlong.ToString();

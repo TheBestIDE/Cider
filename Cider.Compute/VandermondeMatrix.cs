@@ -9,7 +9,7 @@ namespace Cider.Math
         /// <param name="row_num">行数</param>
         /// <param name="column">列数</param>
         /// <param name="bitlength">有限域比特数</param>
-        public static GFMatrix CreateInstance(ulong row, ulong column, uint bitlength)
+        public static GFMatrix CreateInstance(ulong row, ulong column, long bitlength)
         {
             GFMatrix vmatrix = new (row, column, bitlength);
             for (ulong i = 0; i < row; i++)

@@ -198,7 +198,7 @@ namespace Cider.Math
         public static GFMatrix CreateIdentityRowVector(ulong column, ulong col_num, long bitLength)
         {
             GFMatrix mat = new GFMatrix(1, col_num, bitLength);
-            mat.matrix[0, column] = 1;
+            mat.matrix[0, column] = GF.One(bitLength);
             return mat;
         }
 

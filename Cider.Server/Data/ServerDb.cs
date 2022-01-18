@@ -90,6 +90,15 @@ namespace Cider.Server.Data
             sqlcmd.ExecuteNonQuery();
         }
 
+        public void ClearFiles()
+        {
+            string fSql = "DELETE FROM Files";
+
+            using var sqlcmd = sqlConn.CreateCommand();
+            sqlcmd.CommandText= fSql;
+            sqlcmd.ExecuteNonQuery();
+        }
+
         public FileBlocks? GetBlock(string hash)
         {
             string fbSql = @"SELECT * FROM FileBlocks WHERE BlockHash = @BlockHash";
@@ -182,6 +191,15 @@ namespace Cider.Server.Data
                 sqlcmd.ExecuteNonQuery();
             }
             transaction.Commit();
+        }
+
+        public void ClearBlocks()
+        {
+            string fSql = "DELETE FROM FileBlocks";
+
+            using var sqlcmd = sqlConn.CreateCommand();
+            sqlcmd.CommandText= fSql;
+            sqlcmd.ExecuteNonQuery();
         }
 
         public string[]? CombineFilesAndBlocks(string fileName)

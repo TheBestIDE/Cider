@@ -6,6 +6,19 @@ namespace Cider.IO
 {
     public static class FileIOHelper
     {
+        static FileIOHelper()
+        {
+            if (!Directory.Exists(RuntimeArgs.RuntimeDirectory + SavedDirectory))
+            {
+                Directory.CreateDirectory(RuntimeArgs.RuntimeDirectory + SavedDirectory);
+            }
+
+            if (!Directory.Exists(RuntimeArgs.RuntimeDirectory + TempDirectory))
+            {
+                Directory.CreateDirectory(RuntimeArgs.RuntimeDirectory + TempDirectory);
+            }
+        }
+
         public static string SavedDirectory { get; } = "blocks";
 
         public static string TempDirectory { get; } = "tmp";
