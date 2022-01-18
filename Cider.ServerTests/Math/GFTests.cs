@@ -20,6 +20,20 @@ namespace Cider.Math.Tests
         }
 
         [TestMethod()]
+        public void BytesToGFTest()
+        {
+            byte[] data = new byte[4];
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] = (byte)i;
+            }
+            GF gf = data;
+            LongBytes num = data;
+            Assert.AreEqual("0x0000000000010203", num.ToString());
+            Assert.AreEqual(num.ToString(), gf.ToString());
+        }
+
+        [TestMethod()]
         public void InverseTest1()
         {
             GF gf = new GF(8, 0x8C), exp = new GF(8, 0xF7);

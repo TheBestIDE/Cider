@@ -72,7 +72,7 @@ namespace Cider.Math.Tests
         }
 
         [TestMethod()]
-        public void ImplicitArrayTest()
+        public void ImplicitArrayTest1()
         {
             byte[] expected = new byte[32];
             for (int i = 0; i < 32; i++)
@@ -84,6 +84,24 @@ namespace Cider.Math.Tests
             byte[] rslt = num;
 
             for (int i = 0; i < 32; i++)
+            {
+                Assert.AreEqual(expected[i], rslt[i]);
+            }
+        }
+
+        [TestMethod()]
+        public void ImplicitArrayTest2()
+        {
+            byte[] expected = new byte[4];
+            for (int i = 0; i < 4; i++)
+            {
+                expected[i] = (byte)i;
+            }
+
+            LongBytes num = expected;
+            byte[] rslt = num;
+
+            for (int i = 0; i < 4; i++)
             {
                 Assert.AreEqual(expected[i], rslt[i]);
             }
