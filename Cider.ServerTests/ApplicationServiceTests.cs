@@ -25,7 +25,7 @@ namespace Cider.Net.Tests
             iPEndPoint = new IPEndPoint(ipAddress, 8088);
         }
 
-        protected int blockLength = 64;
+        protected int blockLength = 4;
 
         protected TcpListener CreateListener()
         {
@@ -42,6 +42,32 @@ namespace Cider.Net.Tests
             ApplicationService.EnCode = Encoding.UTF8;
             ApplicationService.HashByteLength = (int)SupportHash.SHA256 / 8;
             ApplicationService.BlockLength = blockLength;
+        }
+
+        [TestMethod()]
+        public void RequestCommandTest() 
+        {
+            var listener = CreateListener();
+            var client = CreateClient();
+            listener.Start();
+            var conn_trd = listener.AcceptTcpClientAsync();
+
+            client.Connect(iPEndPoint);
+            using var appConn = new ApplicationService(conn_trd.Result);
+            using var appClient = new ApplicationService(client);
+
+            // 异步测试
+            var task1 = Task.Run(() => appClient.RequestUpload());
+            var cmd1 = appConn.ReceiveRequestCommand();
+            task1.Wait();
+            var task2 = Task.Run(() => appClient.RequestDownload());
+            var cmd2 = appConn.ReceiveRequestCommand();
+            task2.Wait();
+
+            listener.Stop();
+            Assert.AreEqual(ApplicationRequestCommand.Upload, cmd1);
+            Assert.AreEqual(ApplicationRequestCommand.Download, cmd2);
+
         }
 
         [TestMethod()]

@@ -15,7 +15,7 @@ namespace Cider.IO.Tests
         public void RdWrtByteTest()
         {
             ThreadSafeBufferStream stream = new ThreadSafeBufferStream(8);
-            byte[] buffer = new byte[8];
+            byte[] buffer = new byte[1024];
             for (int i = 0; i < buffer.Length; i++)
             {
                 buffer[i] = (byte)i;

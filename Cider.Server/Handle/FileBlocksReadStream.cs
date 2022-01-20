@@ -24,7 +24,7 @@ namespace Cider.Server.Handle
                 {
                     // 只写入存在的文件
                     if (File.Exists(path))
-                        filePathsQueue.Append(path);
+                        filePathsQueue.Enqueue(path);
                 }
                 length = filePathsQueue.Count * RuntimeArgs.Config.BlockLength;
                 GetNextExist();

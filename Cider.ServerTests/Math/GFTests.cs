@@ -94,6 +94,20 @@ namespace Cider.Math.Tests
         }
 
         [TestMethod()]
+        public void MultifyTest1()
+        {
+            byte[] bytes = new byte[] { 0x31, 0x32, 0x33, 0x74 };
+            GF gf1 = bytes, gf2 = new(32, 0x1), expected = new(32, 0x31323374);
+            Assert.AreEqual(expected, GF.Multify(gf1, gf2));
+
+            gf1 = new GF(8, 0x70); gf2 = new GF(8, 0x99); expected = new GF(8, 0xA2);
+            Assert.IsTrue(expected == gf1 * gf2);
+
+            gf1 = new GF(8, 0x00); gf2 = new GF(8, 0xA4); expected = new GF(8, 0x00);
+            Assert.IsTrue(expected == gf1 * gf2);
+        }
+
+        [TestMethod()]
         public void DivideTest()
         {
             GF gf = new GF(8, 0x8C), one = GF.One(8);

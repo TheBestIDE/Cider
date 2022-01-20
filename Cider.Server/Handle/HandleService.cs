@@ -156,7 +156,15 @@ namespace Cider.Server.Handle
         public override FileBlocksReadStream HandleReadFile(string fileName)
         {
             var fbsn = dataProvider.ReadFileBlocksFileName(fileName);
-            return new FileBlocksReadStream(fbsn);
+            List<string> fpaths = new List<string>();
+            if (fbsn is not null)
+            {
+                foreach (var f in fbsn)
+                {
+                    fpaths.Add(FileIOHelper.GetFullSaveFilePath(f));
+                }
+            }
+            return new FileBlocksReadStream(fpaths);
         }
     }
 }
