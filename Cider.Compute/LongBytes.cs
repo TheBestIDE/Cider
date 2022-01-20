@@ -79,7 +79,8 @@ namespace Cider.Math
         {
             ByteLength = byteLength;
             long arrLength = byteLength >> 3;
-            _dat = new ulong[arrLength];
+            long rmdLength = byteLength & 7;
+            _dat = new ulong[rmdLength == 0 ? arrLength : arrLength + 1];
             _dat[^1] = num;
         }
 

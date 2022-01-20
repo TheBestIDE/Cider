@@ -85,7 +85,7 @@ namespace Cider.Math
         /// <summary>
         /// 比特长度
         /// </summary>
-        public uint BitLength { get; }
+        public long BitLength { get; }
 
         public GF Current { get; private set; }
 
@@ -95,7 +95,7 @@ namespace Cider.Math
 
         #region Constructor
 
-        public VandermondeEnumerator(long rowCount, long columnCount, uint bitLength)
+        public VandermondeEnumerator(long rowCount, long columnCount, long bitLength)
         {
             RowCount = rowCount;
             ColumnCount = columnCount;
