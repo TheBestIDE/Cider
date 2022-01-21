@@ -10,6 +10,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Cider.IO;
+using Cider.Server.Core;
 
 namespace Cider.Server
 {
@@ -180,7 +181,7 @@ namespace Cider.Server
 
             // 2.接收哈希列表
             string[] hashs = appClient.ReceiveHashList();   // 接收到哈希列表
-            int[]? diffHash = handle.HandleHashList(hashs);  // 获取服务器不存在的哈希值
+            int[]? diffHash = handle.HandleHashList(hashs);   // 获取服务器不存在的哈希值
             file.BlockHashList = hashs.ToList();    // 写入哈希值列表
             file.DifferentBlockPositionList = diffHash?.ToList();   // 写入不存在列表
 
@@ -222,12 +223,7 @@ namespace Cider.Server
             var handle = Core.Single<HandleService>.Instance;
             string fileName = appClient.ReceiveFileName();
             using Stream f = handle.HandleReadFile(fileName);
-            byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
-            int count;
-            while ((count = f.Read(buffer, 0, buffer.Length)) != 0)
-            {
-                appClient.Send(buffer, 0, count);
-            }
+            appClient.SendFile(f);
         }
 
         protected static void InitApplicationService()

@@ -13,7 +13,7 @@ namespace Cider.Global
             Config = ConfigurationFactory.CreateInstance();
             Config.EnCoding = Encoding.UTF8;
             Config.HashAlgorithm = Core.SupportHash.SHA256;
-            Config.BlockLength = 4;
+            Config.BlockLength = 64;
             Config.ServerPort = 8088;
 
             string location = Assembly.GetExecutingAssembly().Location;

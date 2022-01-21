@@ -3,6 +3,7 @@ using Cider.Hash;
 using Cider.IO;
 using Cider.Math;
 using Cider.Net;
+using Cider.Server.Core;
 using Cider.Server.Data;
 
 namespace Cider.Server.Handle
@@ -19,7 +20,8 @@ namespace Cider.Server.Handle
 
         public override int[]? HandleHashList(string[] hashs)
         {
-            return dataProvider.FindNotExistHash(hashs);
+            // 避免重复查找 去掉重复哈希值后查找不存在的块
+            return dataProvider.FindNotExistHash(hashs.RemoveDuplication().ToArray());
         }
 
         #pragma warning disable 8602
