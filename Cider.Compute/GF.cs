@@ -31,13 +31,26 @@ namespace Cider.Math
 
         static GF()
         {
+            LongBytes one = 1;     // 1
+            LongBytes pri_8 = one << 64 | 0b11011;  // x^64 + x^4 + x^3 + x + 1
+            LongBytes pri_64 = one << 512 | one << 419 | one << 321 | one << 125 | one;     // x^512 + x^419 + x^321 + x^125 + 1
+            LongBytes pri_128 = one << 1024 | one << 333 | one << 135 | one << 73 | one;    // x^1024 + x^333 + x^135 + x^73 + 1
+            LongBytes pri_256 = one << 2048 | one << 19 | one << 14 | one << 13 | one;      // x^2048 + x^19 + x^14 + x^13 + 1
+            LongBytes pri_512 = one << 4096 | one << 27 | one << 15 | one << 1 | one;       // x^4096 + x^27 + x^15 + x^1 + 1
+            LongBytes pri_1024 = one << 8192 | 0b1000100101;    // x^8192 + x^9 + x^5 + x^2 + 1
+
             PrimitiveDict = new Dictionary<long, LongBytes>
             {
                 [4] = 0b10011,     // x^4 + x + 1
                 [8] = 0b100011011, // x^8 + x^4 + x^3 + x^1 + 1
                 [16] = (1UL << 16) | (1 << 12) | 0b1011,     // x^16 + x^12 + x^3 + x + 1
                 [32] = (1UL << 32) | (1 << 22) | 0b111,      // x^32 + x^22 + x^2 + x + 1 
-                [64] = (1UL << 64) | 0b11011  // x^64 + x^4 + x^3 + x + 1
+                [64] = pri_8,       // 8B 本原多项式
+                [512] = pri_64,     // 64B 本原多项式
+                [1024] = pri_128,   // 128B 本原多项式
+                [2048] = pri_256,   // 256B 本原多项式
+                [4096] = pri_512,   // 512B 本原多项式
+                [8192] = pri_1024   // 1KB 本原多项式
             };
         }
 
@@ -104,7 +117,7 @@ namespace Cider.Math
             while (b != zero)
             {
                 DivMod(a, b, out GF q, out GF r);
-                (a, b) = (b, new (BitLength, r._dat));
+                (a, b) = (b, r);
                 (x1, x2) = (x2, x1 + q * x2);
             }
             return new GF(x1);
@@ -158,13 +171,14 @@ namespace Cider.Math
         /// </summary>
         /// <returns>积</returns>
         /// <exception cref="ArgumentException"></exception>
-        public static GF Multify(GF left, GF right)
+        public static GF Multiply(GF left, GF right)
         {
             if (left.BitLength != right.BitLength)
                 throw new ArgumentException("The left and right is not same Field");
             LongBytes l_bits = left._dat, r_bits = right._dat;
             long len = left.BitLength;
             LongBytes result = new (left._dat.ByteLength);
+            LongBytes highestBit = new LongBytes(left._dat.ByteLength, 1UL) << (int)(len - 1);
             // 使用快速平方乘算法计算left*right
             while (r_bits != 0)
             {
@@ -173,7 +187,7 @@ namespace Cider.Math
                     result ^= l_bits;
                 }
 
-                LongBytes flag = l_bits & (new LongBytes(left._dat.ByteLength, 1UL) << (int)(len - 1));   // 记录最高位是否为1
+                LongBytes flag = l_bits & highestBit;   // 记录最高位是否为1
                 l_bits <<= 1;
                 if (flag != 0)
                     l_bits ^= PrimitiveDict[len];   // 左移后溢出 需要减去不可约多项式以回到域内
@@ -266,12 +280,7 @@ namespace Cider.Math
         {
             var bcount = gf.BitLength / 8u;
             byte[] b = new byte[bcount];
-            var bits = new LongBytes(gf._dat);
-            for (long i = bcount - 1; i >= 0; i--)
-            {
-                b[i] = (byte)(bits & 0xFF);
-                bits >>= 8;
-            }
+            Array.Copy(gf._dat, b, bcount);
             return b;
         }
 
@@ -343,7 +352,7 @@ namespace Cider.Math
 
         public static GF operator*(GF left, GF right)
         {
-            return Multify(left, right);
+            return Multiply(left, right);
         }
 
         public static GF operator/(GF left, GF right)
