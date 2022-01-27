@@ -132,7 +132,12 @@ namespace Cider.Net
         /// <summary>
         /// 接收比特流
         /// </summary>
-        public abstract int Receive(byte[] data);
+        public int Receive(byte[] data)
+        {
+            return Receive(data, 0, data.Length);
+        }
+
+        public abstract int Receive(byte[] data, int offset, int count);
 
         /// <summary>
         /// 接收文件名

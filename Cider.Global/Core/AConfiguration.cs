@@ -22,7 +22,7 @@ namespace Cider.Global.Core
         public abstract SupportHash HashAlgorithm { get; internal set; }
 
         /// <summary>
-        /// 分块长度
+        /// 以字节单位的分块长度
         /// </summary>
         public abstract int BlockLength { get; internal set; }
 

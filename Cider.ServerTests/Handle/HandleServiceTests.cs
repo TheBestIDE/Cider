@@ -74,6 +74,7 @@ namespace Cider.Server.Handle.Tests
 
             Assert.IsNotNull(diffHash);
             Assert.AreEqual(1, diffHash.Length);
+            Assert.AreEqual(3, diffHash[0]);
 
             // 3.返回上传的线性表达式结果数值
             int number = diffHash?.Length ?? 0;     // 服务器上不存在的哈希值数量
@@ -98,7 +99,9 @@ namespace Cider.Server.Handle.Tests
             MemoryStream stream = new MemoryStream();
             for (ulong i = 0; i < (ulong)number; i++)
             {
-                stream.Write(linear_mat[i, 0], 0, 4);
+                byte[] bs = linear_mat[i, 0];
+                Assert.AreEqual(4, bs.Length);
+                stream.Write(bs, 0, bs.Length);
             }
             stream.Position = 0;
 
@@ -233,17 +236,18 @@ namespace Cider.Server.Handle.Tests
         [TestMethod()]
         public void HandleReadFileTest()
         {
-            using Stream stream = _handleService.HandleReadFile("Testtest");
-            byte[] buffer = new byte[3];
-            int c, rdCnt = 0;
-            while ((c = stream.Read(buffer, 0, buffer.Length)) != 0)
-            {
-                for (int i = 0; i < c; i++, rdCnt++)
-                {
-                    byte exp = (byte)((rdCnt >> 2) * (rdCnt & 3));
-                    Assert.AreEqual(exp, buffer[i]);
-                }
-            }
+            using Stream stream = _handleService.HandleReadFile("test.txt");
+            Assert.AreEqual(20, stream.Length);
+            //byte[] buffer = new byte[3];
+            //int c, rdCnt = 0;
+            //while ((c = stream.Read(buffer, 0, buffer.Length)) != 0)
+            //{
+            //    for (int i = 0; i < c; i++, rdCnt++)
+            //    {
+            //        byte exp = (byte)((rdCnt >> 2) * (rdCnt & 3));
+            //        Assert.AreEqual(exp, buffer[i]);
+            //    }
+            //}
         }
 
         [TestMethod()]

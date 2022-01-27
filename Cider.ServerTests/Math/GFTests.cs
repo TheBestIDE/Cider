@@ -20,6 +20,28 @@ namespace Cider.Math.Tests
         }
 
         [TestMethod()]
+        public void PrimitiveDictTest()
+        {
+            LongBytes one = 1;
+            LongBytes exp = one << 64 | 0b11011;
+            Assert.AreEqual(exp, GF.PrimitiveDict[64]);
+        }
+
+        [TestMethod()]
+        public void BytesToGFTest()
+        {
+            byte[] data = new byte[4];
+            for (int i = 0; i < data.Length; i++)
+            {
+                data[i] = (byte)i;
+            }
+            GF gf = data;
+            LongBytes num = data;
+            Assert.AreEqual("0x0000000003020100", num.ToString());
+            Assert.AreEqual(num.ToString(), gf.ToString());
+        }
+
+        [TestMethod()]
         public void InverseTest1()
         {
             GF gf = new GF(8, 0x8C), exp = new GF(8, 0xF7);
@@ -52,6 +74,50 @@ namespace Cider.Math.Tests
         }
 
         [TestMethod()]
+        public void InverseTest64()
+        {
+            GF gf = new GF(64, 0xA9E8CUL), one = GF.One(64);
+            GF ivs = gf.Inverse();
+            Assert.AreEqual("0x" + ("0000000000000000cdefbda74d3efa83".ToUpper()), ivs.ToString());
+            Assert.AreEqual(one, gf * gf.Inverse());
+        }
+
+        [TestMethod()]
+        public void InverseTest512()
+        {
+            GF gf = new GF(512, 0x90877A9E8CUL), one = GF.One(512);
+            Assert.AreEqual(one, gf * gf.Inverse());
+        }
+
+        [TestMethod()]
+        public void InverseTest1024()
+        {
+            GF gf = new GF(1024, 0xB90B5C4D5EUL), one = GF.One(1024);
+            Assert.AreEqual(one, gf * gf.Inverse());
+        }
+
+        [TestMethod()]
+        public void InverseTest2048()
+        {
+            GF gf = new GF(2048, 0xB90B567EC4D5EUL), one = GF.One(2048);
+            Assert.AreEqual(one, gf * gf.Inverse());
+        }
+
+        [TestMethod()]
+        public void InverseTest4096()
+        {
+            GF gf = new GF(4096, 0xB90B59BAC4D5EUL), one = GF.One(4096);
+            Assert.AreEqual(one, gf * gf.Inverse());
+        }
+
+        [TestMethod()]
+        public void InverseTest8192()
+        {
+            GF gf = new GF(8192, 0xB90B59BAC4D5EUL), one = GF.One(8192);
+            Assert.AreEqual(one, gf * gf.Inverse());
+        }
+
+        [TestMethod()]
         public void AddTest()
         {
             GF gf1 = 0x89;
@@ -77,6 +143,17 @@ namespace Cider.Math.Tests
 
             gf1 = new GF(8, 0x00); gf2 = new GF(8, 0xA4); expected = new GF(8, 0x00);
             Assert.IsTrue(expected == gf1 * gf2);
+        }
+
+        [TestMethod()]
+        public void MultifyTest1()
+        {
+            byte[] bytes = new byte[] { 0x74, 0x33, 0x32, 0x31 };
+            GF gf1 = bytes, gf2 = new(32, 0x1), expected = new(32, 0x31323374);
+            Assert.AreEqual(expected, GF.Multiply(gf1, gf2));
+
+            gf1 = new GF(64, 0x36c07f6ace0); gf2 = new GF(64, 0x77A9E8UL); expected = new GF(64, 0x8987ff0a2b1a5300);
+            Assert.AreEqual(expected, gf1 * gf2);
         }
 
         [TestMethod()]

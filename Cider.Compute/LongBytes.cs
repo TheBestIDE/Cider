@@ -11,14 +11,14 @@ namespace Cider.Math
     {
         #region Field
 
-        private ulong[] _dat;
+        private readonly ulong[] _dat;
 
         #endregion
 
         #region Property
 
         /// <summary>
-        /// 实际存储的以字节为单位的长度
+        /// 实际存储的信息的以字节为单位的长度
         /// </summary>
         public long ByteLength { get; private set; } = 0;
 
@@ -36,15 +36,15 @@ namespace Cider.Math
         {
             get
             {
-                for (int i = 0; i < WordCount; i++)
+                for (int i = WordCount - 1; i >= 0; i--)
                 {
                     if (_dat[i] == 0)
                         continue;
-                    for (int j = (WordByteLength << 3) - 1; j >= 0; j--)
+                    for (int j = 63; j >= 0; j--)
                     {
                         if ((_dat[i] >> j & 1) != 0)
                         {
-                            return (WordCount - i - 1) * (WordByteLength << 3) + j + 1;
+                            return (i << 6) + j + 1;
                         }
                     }
                 }
@@ -71,15 +71,23 @@ namespace Cider.Math
         {
             this.ByteLength = byteLength;
             long arrLength = byteLength >> 3;
-            _dat = new ulong[arrLength];
+            long rmdLength = byteLength & 7;
+            _dat = new ulong[rmdLength == 0 ? arrLength : arrLength + 1];
         }
 
         public LongBytes(long byteLength, ulong num)
         {
             ByteLength = byteLength;
             long arrLength = byteLength >> 3;
-            _dat = new ulong[arrLength];
-            _dat[^1] = num;
+            long rmdLength = byteLength & 7;
+            _dat = new ulong[rmdLength == 0 ? arrLength : arrLength + 1];
+            _dat[0] = num;
+        }
+
+        public LongBytes(ulong[] data)
+        {
+            _dat = data;
+            ByteLength = data.Length << 3;
         }
 
         public LongBytes(LongBytes bytes)
@@ -118,7 +126,7 @@ namespace Cider.Math
         public override string ToString()
         {
             string str = "0x";
-            for (int i = 0; i < _dat.Length; i++)
+            for (int i = _dat.Length - 1; i >= 0; i--)
             {
                 str += _dat[i].ToString("X16");
             }
@@ -145,35 +153,40 @@ namespace Cider.Math
                 return new LongBytes(longBytes);
 
             // 移位大于0
-            var bytes = new LongBytes(longBytes.ByteLength);
+            ulong[] bits;
             int leftShiftWord = len >> 6;   // 左移的数组索引数
             int leftShiftbit = len & 0x3F;  // 除去字节数后需要左移的位数
-            // 移位溢出 全0
-            if (leftShiftWord >= longBytes.WordCount)
-                return bytes;
-
-            // 左移索引数
-            for (int i = 0; i < longBytes.WordCount - leftShiftWord; i++)
-            {
-                bytes._dat[i] = longBytes._dat[i + leftShiftWord];
-            }
-            for (int i = longBytes.WordCount - leftShiftWord; i < longBytes.WordCount; i++)
-            {
-                bytes._dat[i] = 0;
-            }
 
             // 有小移位
             if (leftShiftbit != 0)
             {
-                // 左移剩余的小移位
-                for (int i = 0; i < longBytes.WordCount - leftShiftWord - 1; i++)
+                // 左移溢出位都为0 则无需扩展
+                if (longBytes._dat[^1] >> (64 - leftShiftbit) == 0)
                 {
-                    bytes._dat[i] = (bytes._dat[i] << leftShiftbit) | (bytes._dat[i + 1] >> (WordByteLength * 8 - leftShiftbit));
+                    bits = new ulong[longBytes.WordCount + leftShiftWord];
                 }
-                bytes._dat[longBytes.WordCount - leftShiftWord - 1] <<= leftShiftbit;
+                else
+                {
+                    bits = new ulong[longBytes.WordCount + leftShiftWord + 1];
+                    bits[^1] = longBytes._dat[^1] >> (64 - leftShiftbit);
+                }
+                for (int i = leftShiftWord + 1; i < longBytes.WordCount + leftShiftWord; i++)
+                {
+                    bits[i] = (longBytes._dat[i - leftShiftWord] << leftShiftbit) | (longBytes._dat[i - leftShiftWord - 1] >> (64 - leftShiftbit));
+                }
+                bits[leftShiftWord] = longBytes._dat[0] << leftShiftbit;
+            }
+            else
+            {
+                bits = new ulong[longBytes.WordCount + leftShiftWord];
+                // 左移索引数
+                for (int i = leftShiftWord; i < bits.Length; i++)
+                {
+                    bits[i] = longBytes._dat[i - leftShiftWord];
+                }
             }
 
-            return bytes;
+            return new LongBytes(bits);
         }
 
         /// <summary>
@@ -194,35 +207,32 @@ namespace Cider.Math
                 return new LongBytes(longBytes);
 
             // 移位大于0
-            var bytes = new LongBytes(longBytes.ByteLength);
             int rightShiftWord = len >> 6;   // 右移的数组索引数
             int rightShiftbit = len & 0x3F;  // 除去字节数后需要右移的位数
             // 移位溢出 全0
             if (rightShiftWord >= longBytes._dat.Length)
-                return bytes;
+                return new LongBytes(new ulong[] { 0 });
 
-            // 右移索引数
-            for (int i = longBytes.WordCount - 1; i >= rightShiftWord; i--)
-            {
-                bytes._dat[i] = longBytes._dat[i - rightShiftWord];
-            }
-            for (int i = rightShiftWord - 1; i >= 0; i--)
-            {
-                bytes._dat[i] = 0;
-            }
-
+            ulong[] bits = new ulong[longBytes.WordCount - rightShiftWord];
             // 有小移位
             if (rightShiftbit != 0)
             {
-                // 右移剩余的小移位
-                for (int i = longBytes.WordCount - 1; i > rightShiftWord; i--)
+                for (int i = 0; i < bits.Length - 1; i++)
                 {
-                    bytes._dat[i] = (bytes._dat[i] >> rightShiftbit) | (bytes._dat[i - 1] << (WordByteLength * 8 - rightShiftbit));
+                    bits[i] = (longBytes._dat[i + rightShiftWord] >> rightShiftbit) | (longBytes._dat[i + rightShiftWord + 1] << (64 - rightShiftbit));
                 }
-                bytes._dat[rightShiftWord] >>= rightShiftbit;
+                bits[^1] = longBytes._dat[^1] >> rightShiftbit;
+            }
+            else
+            {
+                // 右移索引数
+                for (int i = 0; i < bits.Length; i++)
+                {
+                    bits[i] = longBytes._dat[i + rightShiftWord];
+                }
             }
 
-            return bytes;
+            return new LongBytes(bits);
         }
 
         /// <summary>
@@ -230,23 +240,16 @@ namespace Cider.Math
         /// </summary>
         public static LongBytes And(LongBytes left, LongBytes right)
         {
-            var longer = left.ByteLength >= right.ByteLength ? left : right;
-            var shorter = left.ByteLength < right.ByteLength ? left : right;
-            var bytes = new LongBytes(longer.ByteLength);
+            var longer = left.WordCount >= right.WordCount ? left : right;
+            var shorter = left.WordCount < right.WordCount ? left : right;
+            var longs = new ulong[longer.WordCount];
 
-            int i = longer.WordCount - 1;
-            int j = shorter.WordCount - 1;
-            for (; i >= 0 && j >= 0; i--, j--)
+            for (int i = 0; i < shorter.WordCount; i++)
             {
-                bytes._dat[i] = longer._dat[i] & shorter._dat[j];
+                longs[i] = shorter._dat[i] & longer._dat[i];
             }
 
-            for (; i >= 0; i--)
-            {
-                bytes._dat[i] = 0;
-            }
-
-            return bytes;
+            return new LongBytes(longs);
         }
 
         /// <summary>
@@ -254,23 +257,17 @@ namespace Cider.Math
         /// </summary>
         public static LongBytes Or(LongBytes left, LongBytes right)
         {
-            var longer = left.ByteLength >= right.ByteLength ? left : right;
-            var shorter = left.ByteLength < right.ByteLength ? left : right;
-            var bytes = new LongBytes(longer.ByteLength);
+            var longer = left.WordCount >= right.WordCount ? left : right;
+            var shorter = left.WordCount < right.WordCount ? left : right;
+            var longs = new ulong[longer.WordCount];
 
-            int i = longer.WordCount - 1;
-            int j = shorter.WordCount - 1;
-            for (; i >= 0 && j >= 0; i--, j--)
+            Array.Copy(longer._dat, longs, longer.WordCount);
+            for (int i = 0; i < shorter.WordCount; i++)
             {
-                bytes._dat[i] = longer._dat[i] | shorter._dat[j];
+                longs[i] |= shorter._dat[i];
             }
 
-            for (; i >= 0; i--)
-            {
-                bytes._dat[i] = longer._dat[i];
-            }
-
-            return bytes;
+            return new LongBytes(longs);
         }
 
         /// <summary>
@@ -278,23 +275,17 @@ namespace Cider.Math
         /// </summary>
         public static LongBytes Xor(LongBytes left, LongBytes right)
         {
-            var longer = left.ByteLength >= right.ByteLength ? left : right;
-            var shorter = left.ByteLength < right.ByteLength ? left : right;
-            var bytes = new LongBytes(longer.ByteLength);
+            var longer = left.WordCount >= right.WordCount ? left : right;
+            var shorter = left.WordCount < right.WordCount ? left : right;
+            var longs = new ulong[longer.WordCount];
 
-            int i = longer.WordCount - 1;
-            int j = shorter.WordCount - 1;
-            for (; i >= 0 && j >= 0; i--, j--)
+            Array.Copy(longer._dat, longs, longer.WordCount);
+            for (int i = 0; i < shorter.WordCount; i++)
             {
-                bytes._dat[i] = longer._dat[i] ^ shorter._dat[j];
+                longs[i] ^= shorter._dat[i];
             }
 
-            for (; i >= 0; i--)
-            {
-                bytes._dat[i] = longer._dat[i];
-            }
-
-            return bytes;
+            return new LongBytes(longs);
         }
 
         /// <summary>
@@ -302,14 +293,14 @@ namespace Cider.Math
         /// </summary>
         public static LongBytes Not(LongBytes left)
         {
-            var bytes = new LongBytes(left.ByteLength);
+            var longs = new ulong[left.WordCount];
 
             for (int i = 0; i < left.WordCount; i++)
             {
-                bytes._dat[i] = ~left._dat[i];
+                longs[i] = ~left._dat[i];
             }
 
-            return bytes;
+            return new LongBytes(longs);
         }
 
         public static long Max(long left, long right)
@@ -330,11 +321,8 @@ namespace Cider.Math
         /// <returns>大于返回正数 小于返回负数 相等返回0</returns>
         public static int Compare(LongBytes longer, LongBytes shorter)
         {
-            // 长比特数比短比特数所占用存储空间的字数量差
-            var byteDiff = longer.WordCount - shorter.WordCount;
-
             // 检查长比特数的高位是否为0
-            for (int i = 0; i < byteDiff; i++)
+            for (int i = longer.WordCount - 1; i >= shorter.WordCount; i--)
             {
                 // 长比特数长出的部分若不为0 则必然长比特数大
                 if (longer._dat[i] != 0)
@@ -342,15 +330,56 @@ namespace Cider.Math
             }
 
             // 检查对齐部分的大小
-            for (int i = 0; i < shorter.WordCount; i++)
+            for (int i = shorter.WordCount - 1; i >= 0; i--)
             {
-                if (longer._dat[i + byteDiff] > shorter._dat[i])
+                if (longer._dat[i] > shorter._dat[i])
                     return 1;
-                else if (longer._dat[i + byteDiff] < shorter._dat[i])
+                else if (longer._dat[i] < shorter._dat[i])
                     return -1;
             }
 
             return 0;
+        }
+
+        private static ulong[] BytesToLongs(byte[] bytes)
+        {
+            int arrLength = bytes.Length >> 3;
+            int rmdLength = bytes.Length & 7;
+            ulong[] longs = new ulong[rmdLength == 0 ? arrLength : arrLength + 1];
+
+            for (int i = 0; i < longs.Length - 1; i++)
+            {
+                int j = i << 3;
+                for (int k = j + WordByteLength - 1; k >= j; k--)
+                {
+                    longs[i] <<= 8;
+                    longs[i] |= bytes[k];
+                }
+            }
+
+            for (int k = bytes.Length - 1; k >= (longs.Length - 1) << 3; k--)
+            {
+                longs[^1] <<= 8;
+                longs[^1] |= bytes[k];
+            }
+
+            return longs;
+        }
+
+        private static byte[] LongsToBytes(ulong[] longs)
+        {
+            byte[] bytes = new byte[longs.Length << 3];
+            for (int i = 0; i < longs.Length; i++)
+            {
+                int j = i << 3;
+                ulong ul = longs[i];
+                for (int k = j; k < j + WordByteLength; k++)
+                {
+                    bytes[k] = (byte)ul;
+                    ul >>= 8;
+                }
+            }
+            return bytes;
         }
 
         #endregion
@@ -385,32 +414,14 @@ namespace Cider.Math
 
         public static implicit operator LongBytes(byte[] data)
         {
-            var bytes = new LongBytes(data.Length);
+            ulong[] longs = BytesToLongs(data);
 
-            for (int i = 0; i < bytes.WordCount; i++)
-            {
-                int j = i * WordByteLength;
-                for (int k = j; k < j + WordByteLength; k++)
-                {
-                    bytes._dat[i] <<= 8;
-                    bytes._dat[i] |= data[k];
-                }
-            }
-
-            return bytes;
+            return new LongBytes(longs);
         }
 
         public static implicit operator byte[](LongBytes bytes)
         {
-            byte[] bs = new byte[bytes.ByteLength];
-            for (int i = 0; i < bytes.WordCount; i++)
-            {
-                int j = i * WordByteLength;
-                for (int k = 0; k < WordByteLength; k++)
-                {
-                    bs[k + j] = (byte)(bytes._dat[i] >> ((WordByteLength - k - 1) << 3));
-                }
-            }
+            byte[] bs = LongsToBytes(bytes._dat);
             return bs;
         }
 

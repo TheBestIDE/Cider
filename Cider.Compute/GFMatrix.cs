@@ -240,7 +240,7 @@ namespace Cider.Math
         /// <param name="right">右矩阵</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException">比特长不相等或左矩阵列数不等于右矩阵行数</exception>
-        public static GFMatrix Multipy(GFMatrix left, GFMatrix right)
+        public static GFMatrix Multiply(GFMatrix left, GFMatrix right)
         {
             if (left.BitLength != right.BitLength)
                 throw new ArgumentException("左右矩阵不在同一个伽罗华域内");
@@ -274,7 +274,7 @@ namespace Cider.Math
 
         public static GFMatrix operator*(GFMatrix left, GFMatrix right)
         {
-            return Multipy(left, right);
+            return Multiply(left, right);
         }
 
         public static bool operator ==(GFMatrix left, GFMatrix right)

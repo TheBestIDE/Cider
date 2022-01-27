@@ -77,10 +77,10 @@ namespace Cider.Net
 
         #region Method
 
-        public override int Receive(byte[] data)
+        public override int Receive(byte[] data, int offset, int count)
         {
             if (nStream.CanRead)
-                return nStream.Read(data);
+                return nStream.Read(data, 0, data.Length);
             else
                 return 0;
         }
@@ -174,20 +174,20 @@ namespace Cider.Net
             CheckIfInit();
             var head = ReceiveHead(ApplicationOption.SendFileName);
 
-            byte[] buf = new byte[1024];    // 缓冲区
+            byte[] buf = new byte[head.DataLength];    // 缓冲区
             using MemoryStream mStream = new MemoryStream();
             int waitTimes = 0;  // 等待次数
             while (mStream.Length < head.DataLength)
             {
                 if (HasData)    // 有数据可读取
                 {
-                    int count = Receive(buf);
+                    int count = Receive(buf, 0, (int)(head.DataLength - (int)mStream.Length));
                     mStream.Write(buf, 0, count);
                     waitTimes = 0;  // 重置等待次数
                 }
                 else if (waitTimes <= 10)   // 收到
                 {
-                    Thread.Sleep(1000); // 等待1s
+                    Thread.Sleep(100); // 等待0.1s
                     waitTimes++;
                 }
                 else    // 等待超过10次 不再等待

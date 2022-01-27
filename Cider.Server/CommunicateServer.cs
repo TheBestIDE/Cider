@@ -10,6 +10,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Cider.IO;
+using Cider.Server.Core;
 
 namespace Cider.Server
 {
@@ -27,6 +28,8 @@ namespace Cider.Server
         /// </summary>
         protected Dictionary<int, ApplicationLayer> clientDict;
 
+        protected Dictionary<int, Task> taskDict;
+
         #endregion
 
         public CommunicateServer() : this(RuntimeArgs.Config.ServerPort)
@@ -37,12 +40,7 @@ namespace Cider.Server
         {
             server = new TcpListener(IPAddress.Any, port);
             clientDict = new Dictionary<int, ApplicationLayer>();
-        }
-
-        public void Run()
-        {
-            InitApplicationService();
-            RunAsync().Wait();
+            taskDict = new Dictionary<int, Task>();
         }
 
         public void Dispose()
@@ -51,12 +49,17 @@ namespace Cider.Server
             {
                 item.Value.Dispose(); // 关闭所有连接
             }
+            foreach (var task in taskDict)
+            {
+                task.Value.Dispose();
+            }
         }
 
         #pragma warning disable 8600
         #pragma warning disable 8602
-        protected async Task RunAsync()
+        public void Run()
         {
+            InitApplicationService();
             server.Start();
 
             Console.WriteLine("Start Server.");
@@ -75,7 +78,8 @@ namespace Cider.Server
 
                 // 异步处理连接请求
                 // 直接返回监听
-                await HandleConnectionAsync(service);
+                var task = HandleConnectionAsync(service);
+                taskDict[task.GetHashCode()] = task;
                 Console.WriteLine("Task submitted.");
             }
         }
@@ -93,7 +97,6 @@ namespace Cider.Server
         /// </summary>
         protected void HandleConnection(ApplicationLayer appClient)
         {
-            var handle = Core.Single<HandleService>.Instance;    // 获取处理实例 单例模式
             try
             {
                 var request = appClient.ReceiveRequestCommand();
@@ -228,12 +231,7 @@ namespace Cider.Server
             var handle = Core.Single<HandleService>.Instance;
             string fileName = appClient.ReceiveFileName();
             using Stream f = handle.HandleReadFile(fileName);
-            byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
-            int count;
-            while ((count = f.Read(buffer, 0, buffer.Length)) != 0)
-            {
-                appClient.Send(buffer, 0, count);
-            }
+            appClient.SendFile(f);
         }
 
         protected static void InitApplicationService()

@@ -3,6 +3,7 @@ using Cider.Hash;
 using Cider.IO;
 using Cider.Math;
 using Cider.Net;
+using Cider.Server.Core;
 using Cider.Server.Data;
 
 namespace Cider.Server.Handle
@@ -24,7 +25,8 @@ namespace Cider.Server.Handle
 
         public override int[]? HandleHashList(string[] hashs)
         {
-            return dataProvider.FindNotExistHash(hashs);
+            // 避免重复查找 去掉重复哈希值后查找不存在的块
+            return dataProvider.FindNotExistHash(hashs.RemoveDuplication().ToArray());
         }
 
         #pragma warning disable 8602
@@ -161,7 +163,15 @@ namespace Cider.Server.Handle
         public override FileBlocksReadStream HandleReadFile(string fileName)
         {
             var fbsn = dataProvider.ReadFileBlocksFileName(fileName);
-            return new FileBlocksReadStream(fbsn);
+            List<string> fpaths = new List<string>();
+            if (fbsn is not null)
+            {
+                foreach (var f in fbsn)
+                {
+                    fpaths.Add(FileIOHelper.GetFullSaveFilePath(f));
+                }
+            }
+            return new FileBlocksReadStream(fpaths);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace Cider.Client
             iPEndPoint = new IPEndPoint(ipAddress, RuntimeArgs.Config.ServerPort);
         }
 
-        public async Task Upload(string path)
+        public void Upload(string path)
         {
             if (!File.Exists(path))
             {
@@ -44,29 +44,62 @@ namespace Cider.Client
                 client.Connect(iPEndPoint);
                 using ApplicationLayer appClient = new ApplicationService(client);
 
+                Console.WriteLine("开始上传");
+
                 // 1.请求上传
+                #if DEBUG
+                Console.WriteLine("请求上传");
+                #endif
                 appClient.RequestUpload();
+
                 // 2.上传文件名
+                #if DEBUG
+                Console.WriteLine("上传文件名");
+                #endif
                 appClient.SendFileName(CutFileName(path));
+
                 // 3.分块哈希上传
+                #if DEBUG
+                Console.WriteLine("上传哈希值列表，数量：" + hashs.Length);
+                #endif
                 appClient.SendHashList(hashs);
+
                 // 4.接收返回值
+                #if DEBUG
+                Console.WriteLine("等待返回值");
+                #endif
                 int returnNumber = appClient.ReceiveReturnNumber();
-                Stream stream;
+                #if DEBUG
+                Console.WriteLine("接受返回值：" + returnNumber);
+                #endif
+
                 // 5.判断需要上传的块数量是否等于请求的分块哈希值数量
+                Stream stream;
+                Task? uptask = null;
+                #if DEBUG
+                Console.WriteLine("上传文件");
+                #endif
                 // 相等时无需混淆 直接上传文件
                 if (returnNumber == hashs.Length)
                 {
-                    stream = await ReadFileAsync(path);
+                    stream = new ThreadSafeBufferStream(hashs.Length * RuntimeArgs.Config.BlockLength);
+                    uptask = ReadFileAsync(path, stream);
                 }
                 // 不相等时需要使用矩阵encode混淆
                 else
                 {
                     // 异步计算线性表达式
-                    stream = await ComputeLinearAsync(path, returnNumber);
+                    #if DEBUG
+                    Console.WriteLine("计算线性表达式");
+                    #endif
+                    stream = new ThreadSafeBufferStream(returnNumber * RuntimeArgs.Config.BlockLength);
+                    uptask = ComputeLinearAsync(path, returnNumber, stream);
                 }
                 // 6.上传计算结果
+                Console.WriteLine("发送文件块");
                 appClient.SendLinearResult(stream);
+                uptask?.Wait();
+                Console.WriteLine("上传完成");
             }
             catch (SocketException se)
             {
@@ -82,6 +115,10 @@ namespace Cider.Client
                 Console.WriteLine(e.StackTrace);
                 #endif
                 Console.WriteLine("网络错误");
+            }
+            finally
+            {
+                Console.WriteLine("任务结束");
             }
         }
 
@@ -144,6 +181,7 @@ namespace Cider.Client
 
                     int efct_cnt = padding.DePadding(buffer);   // 有效字节数
                     fs.Write(buffer, 0, efct_cnt);
+                    Console.WriteLine("下载完成");
                 }
                 catch (DirectoryNotFoundException dnfe)
                 {
@@ -203,7 +241,7 @@ namespace Cider.Client
             int count;
             List<string> hashs = new();
             var hashHelper = new HashHelper(RuntimeArgs.Config.HashAlgorithm);
-            while ((count = fs.Read(buffer, 0, buffer.Length)) != RuntimeArgs.Config.BlockLength)
+            while ((count = fs.Read(buffer, 0, buffer.Length)) == RuntimeArgs.Config.BlockLength)
             {
                 hashs.Add(hashHelper.Compute(buffer));
             }
@@ -214,18 +252,19 @@ namespace Cider.Client
             return hashs.ToArray();
         }
 
-        protected async Task<Stream> ReadFileAsync(string path)
+        protected async Task ReadFileAsync(string path, Stream stream)
         {
-            return await Task.Run(() => ReadFile(path));
+            await Task.Run(() => ReadFile(path, stream));
         }
 
-        protected Stream ReadFile(string path)
+        protected Stream ReadFile(string path, Stream stream)
         {
             byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
             using FileStream fs = File.Open(path, FileMode.Open, FileAccess.Read);
             int count;
-            ThreadSafeBufferStream stream = new (fs.Length);
-            while ((count = fs.Read(buffer, 0, buffer.Length)) != RuntimeArgs.Config.BlockLength)
+            long length = (fs.Length / RuntimeArgs.Config.BlockLength + 1) * RuntimeArgs.Config.BlockLength;
+            //ThreadSafeBufferStream stream = new (length);
+            while ((count = fs.Read(buffer, 0, buffer.Length)) == RuntimeArgs.Config.BlockLength)
             {
                 stream.Write(buffer, 0, count);
             }
@@ -242,9 +281,9 @@ namespace Cider.Client
         /// <param name="path"></param>
         /// <param name="count"></param>
         /// <returns></returns>
-        protected async Task<Stream> ComputeLinearAsync(string path, int count)
+        protected async Task ComputeLinearAsync(string path, int count, Stream stream)
         {
-            return await Task.Run(() => ComputeLinearAsync(path, count));
+            await Task.Run(() => ComputeLinear(path, count, stream));
         }
 
         /// <summary>
@@ -253,30 +292,31 @@ namespace Cider.Client
         /// <param name="path"></param>
         /// <param name="count"></param>
         /// <returns>结果写入内存流中</returns>
-        protected Stream ComputeLinear(string path, int count)
+        protected void ComputeLinear(string path, int count, Stream stream)
         {
             // 耗时操作
             // 使用线程安全的流保存计算结果
             // 保证异步操作的线程安全性
-            Stream stream = new ThreadSafeBufferStream(count * RuntimeArgs.Config.BlockLength);
+            //Stream stream = new ThreadSafeBufferStream(count * RuntimeArgs.Config.BlockLength);
             using FileStream fs = File.Open(path, FileMode.Open, FileAccess.Read);
 
             // 完整的块个数
-            var completeBlockCount = fs.Length / (RuntimeArgs.Config.BlockLength >> 3);
+            var completeBlockCount = fs.Length / RuntimeArgs.Config.BlockLength;
             // 文件块数
             // 无论文件是否能被完整分块 都需要Padding
             // 故真正上传的块数等于完整块数量+1
             var blockCount = completeBlockCount + 1;
 
-            VandermondeEnumerator vdmd = new(count, blockCount, (uint)RuntimeArgs.Config.BlockLength);
+            long bitLength = RuntimeArgs.Config.BlockLength << 3;
+            VandermondeEnumerator vdmd = new(count, blockCount, bitLength);
             // 线性表达式结果为count * 1的矩阵
             // 计算结果按顺序写入字节流
             for (int i = 0; i < count; i++)
             {
                 byte[] buffer = new byte[RuntimeArgs.Config.BlockLength];
-                var linearItem = new GF((uint)RuntimeArgs.Config.BlockLength, 0);   // 保存当前线性表达式计算的中间结果
+                var linearItem = new GF(bitLength, 0);   // 保存当前线性表达式计算的中间结果
                 // 计算第i行的结果
-                for (int j = 0; j < blockCount ; j++)
+                for (int j = 0; j < blockCount; j++)
                 {
                     int c = fs.Read(buffer, 0, RuntimeArgs.Config.BlockLength); // 从文件中读取字节
                     // 块不完整需要填充
@@ -288,10 +328,9 @@ namespace Cider.Client
                     var gf = buffer * vdmd.Current; // 矩阵对应元素相乘
                     linearItem += gf;   // 加上元素乘法结果
                 }
-                stream.Write(linearItem, 0, (int)linearItem.BitLength); // 当前线性表达式计算完成 写入流
+                stream.Write(linearItem, 0, (int)linearItem.BitLength >> 3); // 当前线性表达式计算完成 写入流
                 fs.Seek(0, SeekOrigin.Begin);   // 回到文件头部重新计算下一个线性表达式
             }
-            return stream;
         }
 
         /// <summary>是否能够覆盖指定路径文件</summary>
