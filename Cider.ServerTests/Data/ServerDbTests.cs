@@ -181,5 +181,49 @@ namespace Cider.Server.Data.Tests
                 Assert.AreEqual(i.ToString(), hashFileName[i]);
             }
         }
+
+        [TestMethod()]
+        public void DirtyBlocksTest()
+        {
+            using var db = new ServerDb();
+            List<string> dthashs = new List<string>();
+            for (int i = 0; i < 5; i++)
+            {
+                dthashs.Add("BlockHash" + i);
+            }
+
+            db.InsertDirtyBlocksIfNotExist(dthashs);
+
+            List<string> thashs = new List<string>();
+            for (int i = 4; i < 10; i++)
+            {
+                thashs.Add("BlockHash" + i);
+            }
+
+            bool rst = db.IsInDirtyBlocks(thashs);
+            Assert.IsTrue(rst);
+        }
+
+        [TestMethod()]
+        public void DirtyBlocksTest1()
+        {
+            using var db = new ServerDb();
+            List<string> dthashs = new List<string>();
+            for (int i = 0; i < 5; i++)
+            {
+                dthashs.Add("BlockHash" + i);
+            }
+
+            db.InsertDirtyBlocksIfNotExist(dthashs);
+
+            List<string> thashs = new List<string>();
+            for (int i = 5; i < 10; i++)
+            {
+                thashs.Add("BlockHash" + i);
+            }
+
+            bool rst = db.IsInDirtyBlocks(thashs);
+            Assert.IsFalse(rst);
+        }
     }
 }

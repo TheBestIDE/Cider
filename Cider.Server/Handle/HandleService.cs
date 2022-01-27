@@ -14,7 +14,12 @@ namespace Cider.Server.Handle
 
         public override void HandleDirtyBlock(BlockedFile file)
         {
-            throw new NotImplementedException();
+            dataProvider.InsertToDirtyList(file.BlockHashList);
+        }
+
+        public override bool CheckDirtyBlocks(IEnumerable<string> hashs)
+        {
+            return dataProvider.CheckIsInDirtyList(hashs);
         }
 
         public override int[]? HandleHashList(string[] hashs)

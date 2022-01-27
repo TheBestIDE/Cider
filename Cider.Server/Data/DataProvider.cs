@@ -82,5 +82,15 @@ namespace Cider.Server.Data
         {
             return Db.CombineFilesAndBlocks(fileName);
         }
+
+        public void InsertToDirtyList(IEnumerable<string> hashs)
+        {
+            Db.InsertDirtyBlocksIfNotExist(hashs);
+        }
+
+        public bool CheckIsInDirtyList(IEnumerable<string> hashs)
+        {
+            return Db.IsInDirtyBlocks(hashs);
+        }
     }
 }

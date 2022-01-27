@@ -119,17 +119,6 @@ namespace Cider.Server
                 // 未初始化应用层服务
                 Console.WriteLine("Application Layer Serivce Not Initialized.");
             }
-            catch (Hash.HashVerifyException)
-            {
-                Console.WriteLine("Fail to Verify Received Data's Hash.");
-            }
-            catch (LackFileBlocksException)
-            {
-                // 上传的文件块数量与请求的不一致
-                Console.WriteLine("Lack of File Blocks.");
-                // 处理脏块
-                // handle.HandleDirtyBlock(file);
-            }
             catch (LackHeadBytesException)
             {
                 // 头字节缺失
@@ -173,39 +162,58 @@ namespace Cider.Server
             BlockedFile file = new ();  // 保存当前处理的文件信息上下文
             var handle = Core.Single<HandleService>.Instance;    // 获取处理实例 单例模式
 
-            // 1.接收文件名
-            file.FileName = appClient.ReceiveFileName();
-
-            // 2.接收哈希列表
-            string[] hashs = appClient.ReceiveHashList();   // 接收到哈希列表
-            int[]? diffHash = handle.HandleHashList(hashs);  // 获取服务器不存在的哈希值
-            file.BlockHashList = hashs.ToList();    // 写入哈希值列表
-            file.DifferentBlockPositionList = diffHash?.ToList();   // 写入不存在列表
-
-            // 3.返回上传的线性表达式结果数值
-            int number = diffHash?.Length ?? 0;     // 服务器上不存在的哈希值数量
-            // r < k的情况
-            if (number != hashs.Length)
-                number = handle.HandleConfuseNumber(number);    // 混淆数量
-            // r = k无需混淆 保证 r <= k
-            appClient.SendReturnNumber(number);     // 发送返回数值
-
-            // 4.处理线性表达式结果
-            using var result = appClient.ReceiveLinearResult();     // 接收线性表达式结果
-            // 需要上传的块数量等于请求的块数量
-            if (number == hashs.Length)
+            try
             {
-                // 客户端不需要使用矩阵编码
-                // 上传的即为文件块
-                handle.HandleReadVerifyBlocks(file, result);
-            }
-            else
-            {
-                handle.HandleLinearResult(file, result);    // 处理线性表达式结果
-            }
+                // 1.接收文件名
+                file.FileName = appClient.ReceiveFileName();
 
-            // 5.写入文件
-            handle.HandleWriteFile(file);
+                // 2.接收哈希列表
+                string[] hashs = appClient.ReceiveHashList();   // 接收到哈希列表
+                int[]? diffHash = handle.HandleHashList(hashs);  // 获取服务器不存在的哈希值
+                file.BlockHashList = hashs.ToList();    // 写入哈希值列表
+                file.DifferentBlockPositionList = diffHash?.ToList();   // 写入不存在列表
+
+                // 3.返回上传的线性表达式结果数值
+                int number = handle.CheckDirtyBlocks(hashs) // 检查哈希值是否有位于脏块列表中
+                             ? hashs.Length                 // 返回r = k
+                             : (diffHash?.Length ?? 0);     // 服务器上不存在的哈希值数量
+                // r < k的情况
+                if (number != hashs.Length)
+                    number = handle.HandleConfuseNumber(number);    // 混淆数量
+                // r = k无需混淆 保证 r <= k
+                appClient.SendReturnNumber(number);     // 发送返回数值
+
+                // 4.处理线性表达式结果
+                using var result = appClient.ReceiveLinearResult();     // 接收线性表达式结果
+                // 需要上传的块数量等于请求的块数量
+                if (number == hashs.Length)
+                {
+                    // 客户端不需要使用矩阵编码
+                    // 上传的即为文件块
+                    handle.HandleReadVerifyBlocks(file, result);
+                }
+                else
+                {
+                    handle.HandleLinearResult(file, result);    // 处理线性表达式结果
+                }
+
+                // 5.写入文件
+                handle.HandleWriteFile(file);
+            }
+            catch (Hash.HashVerifyException)
+            {
+                Console.WriteLine("Fail to Verify Received Data's Hash.");
+                // 哈希验证失败
+                // 处理脏块
+                handle.HandleDirtyBlock(file);
+            }
+            catch (LackFileBlocksException)
+            {
+                // 上传的文件块数量与请求的不一致
+                Console.WriteLine("Lack of File Blocks.");
+                // 处理脏块
+                handle.HandleDirtyBlock(file);
+            }
         }
 
         /// <summary>

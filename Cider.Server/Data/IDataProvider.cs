@@ -1,4 +1,5 @@
 using Cider.IO;
+using System.Collections.Generic;
 
 namespace Cider.Server.Data
 {
@@ -29,5 +30,9 @@ namespace Cider.Server.Data
 
         /// <summary>读取文件块的物理存储文件名</summary>
         public string[]? ReadFileBlocksFileName(string fileName);
+
+        public void InsertToDirtyList(IEnumerable<string> hashs);
+
+        public bool CheckIsInDirtyList(IEnumerable<string> hashs);
     }
 }

@@ -15,5 +15,8 @@ namespace Cider.Server.Data
         public void DeleteBlocks(IEnumerable<string> hashs);
 
         public string[]? CombineFilesAndBlocks(string fileName);
+
+        public bool IsInDirtyBlocks(IEnumerable<string> hashs);
+        public void InsertDirtyBlocksIfNotExist(IEnumerable<string> hashs);
     }
 }

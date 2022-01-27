@@ -37,6 +37,12 @@ namespace Cider.Server.Handle
         public abstract void HandleDirtyBlock(BlockedFile file);
 
         /// <summary>
+        /// 检查是否有块哈希值位于脏块列表中
+        /// </summary>
+        /// <param name="hashs">待检查的哈希值列表</param>
+        public abstract bool CheckDirtyBlocks(IEnumerable<string> hashs);
+
+        /// <summary>
         /// 混淆数量
         /// </summary>
         /// <param name="number">原来的数量</param>        

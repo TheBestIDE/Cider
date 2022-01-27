@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Cider.IO;
 using Cider.Server.Data.Model;
+using System.Threading;
 
 namespace Cider.Server.Data
 {
@@ -222,6 +223,104 @@ namespace Cider.Server.Data
             return li.Count == 0 ? null : li.ToArray();
         }
 
+        public bool IsInDirtyBlocks(IEnumerable<string> hashs)
+        {
+            // 仅允许单线程进入
+            // 避免临时表被多线程访问而出现脏数据
+            Mutex tmptMutex = new ();
+
+            string tmptSql = @"
+                            CREATE TEMPORARY TABLE TmpHashs (
+                                BlockHash TEXT NOT NULL
+                            );";
+            string instSql = @"
+                            INSERT INTO TmpHashs
+                                (BlockHash)
+                            SELECT 
+                                @BlockHash
+                            WHERE NOT EXISTS (
+                                SELECT *
+                                FROM TmpHashs
+                                WHERE BlockHash = @BlockHash
+                            );";
+            string cmbSql = @"
+                            SELECT * 
+                            FROM (
+                                SELECT BlockHash 
+                                FROM DirtyBlocks
+                            ) d
+                            JOIN TmpHashs
+                            ON TmpHashs.BlockHash = d.BlockHash";
+
+            tmptMutex.WaitOne();
+
+            // 进入临界区
+            using var transaction = sqlConn.BeginTransaction();
+            using var sqlcmd = sqlConn.CreateCommand();
+
+            // 创建临时表
+            sqlcmd.CommandText = tmptSql;
+            sqlcmd.ExecuteNonQuery();
+            
+            // 数据写入临时表
+            sqlcmd.CommandText = instSql;
+            var param = new SqliteParameter()
+            {
+                ParameterName = "@BlockHash"
+            };
+            sqlcmd.Parameters.Add(param);
+            foreach(string hash in hashs)
+            {
+                param.Value = hash;
+                sqlcmd.ExecuteNonQuery();
+            }
+
+            // 合并临时表与脏块列表
+            sqlcmd.CommandText = cmbSql;
+            sqlcmd.Parameters.Clear();
+            using var sqlrdr = sqlcmd.ExecuteReader();
+            bool isIn = sqlrdr.HasRows; // 有数据则说明给定的哈希列表中有哈希值位于脏块列表中
+
+            // 不需要临时表数据
+            // 回滚事务
+            transaction.Rollback();
+
+            // 出临界区
+            tmptMutex.ReleaseMutex();
+
+            return isIn;
+        }
+
+        public void InsertDirtyBlocksIfNotExist(IEnumerable<string> hashs)
+        {
+            string sql = @"
+                        INSERT INTO DirtyBlocks
+                            (BlockHash)
+                        SELECT
+                            @BlockHash
+                        WHERE NOT EXISTS (
+                            SELECT * 
+                            FROM DirtyBlocks 
+                            WHERE BlockHash = @BlockHash
+                        )";
+            using var transaction = sqlConn.BeginTransaction();
+            using var sqlcmd = sqlConn.CreateCommand();
+            sqlcmd.CommandText = sql;
+            var param = new SqliteParameter()
+            {
+                ParameterName = "@BlockHash"
+            };
+            sqlcmd.Parameters.Add(param);
+
+            foreach(string hash in hashs)
+            {
+                param.Value = hash;
+                sqlcmd.ExecuteNonQuery();
+            }
+
+            transaction.Commit();
+        }
+
         public void Dispose()
         {
             CloseConnection(sqlConn);
@@ -285,12 +384,27 @@ namespace Cider.Server.Data
                             BlockFileName TEXT NOT NULL,
                             PRIMARY KEY (BlockHash)
                         );";
+            // 脏块列表
+            var drtbSql = @"
+                        CREATE TABLE IF NOT EXISTS DirtyBlocks (
+                            BlockHash TEXT NOT NULL,
+                            PRIMARY KEY (BlockHash)
+                        );";
             // 创建表
             OpenConnection(sqlConn);
-            using var sqlcmd = new SqliteCommand(ftSql, sqlConn);
+            using var transaction = sqlConn.BeginTransaction();
+            using var sqlcmd = sqlConn.CreateCommand();
+
+            sqlcmd.CommandText = ftSql;
             sqlcmd.ExecuteNonQuery();
+
             sqlcmd.CommandText = fbtSql;
             sqlcmd.ExecuteNonQuery();
+
+            sqlcmd.CommandText = drtbSql;
+            sqlcmd.ExecuteNonQuery();
+
+            transaction.Commit();
             CloseConnection(sqlConn);
         }
     }
