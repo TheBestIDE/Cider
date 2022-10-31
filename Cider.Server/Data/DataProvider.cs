@@ -27,7 +27,7 @@ namespace Cider.Server.Data
 
         public void SetFile(BlockedFile file)
         {
-            Files f = new Files()
+            Model.File f = new Model.File()
             {
                 FileName = file.FileName,
                 BlockHash = file.BlockHashList
@@ -35,9 +35,9 @@ namespace Cider.Server.Data
             Db.InsertFile(f);
         }
 
-        public void SetBlockMessage(FileBlock fb, string fbname)
+        public void SetBlockMessage(IO.FileBlock fb, string fbname)
         {
-            FileBlocks fbs = new FileBlocks()
+            Model.FileBlock fbs = new Model.FileBlock()
             {
                 BlockFileName = fbname,
                 BlockHash = fb.HashCode
@@ -47,10 +47,10 @@ namespace Cider.Server.Data
 
         public void SetBlocksMessage(Dictionary<string, string> hash_name_dic)
         {
-            List<FileBlocks> blocks = new ();
+            List<Model.FileBlock> blocks = new ();
             foreach (var trp in hash_name_dic)
             {
-                blocks.Add(new FileBlocks()
+                blocks.Add(new Model.FileBlock()
                 {
                     BlockFileName = trp.Value,
                     BlockHash = trp.Key

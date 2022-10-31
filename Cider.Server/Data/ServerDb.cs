@@ -30,15 +30,15 @@ namespace Cider.Server.Data
         }
 
         #pragma warning disable 8602
-        public Files? GetFile(string fileName)
+        public Model.File? GetFile(string fileName)
         {
             string fSql = @"SELECT * FROM Files WHERE FileName = @FileName;";
 
             using var sqlcmd = new SqliteCommand(fSql, sqlConn);
             sqlcmd.Parameters.Add(new SqliteParameter("@FileName", fileName));
             using var result = sqlcmd.ExecuteReader();
-            Files? file = result.HasRows 
-                            ? new Files() 
+            Model.File? file = result.HasRows 
+                            ? new Model.File() 
                             { 
                                 FileName = fileName,
                                 BlockHash = new List<string>() 
@@ -52,7 +52,7 @@ namespace Cider.Server.Data
             return file;
         }
 
-        public void InsertFile(Files fb)
+        public void InsertFile(Model.File fb)
         {
             string fSql = @"INSERT INTO Files 
                                 (FileName, BlockHash)
@@ -100,15 +100,15 @@ namespace Cider.Server.Data
             sqlcmd.ExecuteNonQuery();
         }
 
-        public FileBlocks? GetBlock(string hash)
+        public Model.FileBlock? GetBlock(string hash)
         {
             string fbSql = @"SELECT * FROM FileBlocks WHERE BlockHash = @BlockHash";
 
             using var sqlcmd = new SqliteCommand(fbSql, sqlConn);
             sqlcmd.Parameters.Add(new SqliteParameter("@BlockHash", hash));
             using var result = sqlcmd.ExecuteReader();
-            FileBlocks? fb = result.Read()
-                                ? new FileBlocks()
+            Model.FileBlock? fb = result.Read()
+                                ? new Model.FileBlock()
                                 {
                                     BlockHash = hash,
                                     BlockFileName = result.GetString(1)
@@ -117,7 +117,7 @@ namespace Cider.Server.Data
             return fb;
         }
 
-        public void InsertBlock(FileBlocks fb)
+        public void InsertBlock(Model.FileBlock fb)
         {
             string fbSql = @"INSERT INTO FileBlocks
                                 (BlockHash, BlockFileName)
@@ -130,7 +130,7 @@ namespace Cider.Server.Data
             sqlcmd.ExecuteNonQuery();
         }
 
-        public void InsertBlocks(IEnumerable<FileBlocks> fbs)
+        public void InsertBlocks(IEnumerable<Model.FileBlock> fbs)
         {
             string fbSql = @"INSERT INTO FileBlocks
                                 (BlockHash, BlockFileName)
@@ -350,8 +350,8 @@ namespace Cider.Server.Data
             string dbFile = "./" + DbFileDirectory + "/" + DbFileName;
             if (!Directory.Exists("./" + DbFileDirectory))
                 Directory.CreateDirectory("./" + DbFileDirectory);
-            if (!File.Exists(dbFile))
-                File.Create(dbFile).Dispose();
+            if (!System.IO.File.Exists(dbFile))
+                System.IO.File.Create(dbFile).Dispose();
         }
 
         /// <summary>创建连接</summary>

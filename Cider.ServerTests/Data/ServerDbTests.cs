@@ -17,7 +17,7 @@ namespace Cider.Server.Data.Tests
         public void StaticServerDbTest()
         {
             string dbPath = "./" + ServerDb.DbFileDirectory + "/" + ServerDb.DbFileName;
-            Assert.IsTrue(File.Exists(dbPath));
+            Assert.IsTrue(System.IO.File.Exists(dbPath));
         }
 
         [TestMethod()]
@@ -43,7 +43,7 @@ namespace Cider.Server.Data.Tests
         public void InsertFileTest()
         {
             using var db = new ServerDb();
-            Files? file = new Files()
+            Model.File? file = new Model.File()
             {
                 FileName = "Test"
             };
@@ -92,10 +92,10 @@ namespace Cider.Server.Data.Tests
         public void InsertBlockTest()
         {
             using var db = new ServerDb();
-            IList<FileBlocks> fileBlocks = new List<FileBlocks>();
+            IList<FileBlock> fileBlocks = new List<FileBlock>();
             for (int i = 0; i < 10; i++)
             {
-                fileBlocks.Add(new FileBlocks()
+                fileBlocks.Add(new FileBlock()
                 {
                     BlockHash = "BlockHash" + i,
                     BlockFileName = i.ToString(),
@@ -120,10 +120,10 @@ namespace Cider.Server.Data.Tests
         public void InsertBlocksTest()
         {
             using var db = new ServerDb();
-            IList<FileBlocks> fileBlocks = new List<FileBlocks>();
+            IList<FileBlock> fileBlocks = new List<FileBlock>();
             for (int i = 0; i < 10; i++)
             {
-                fileBlocks.Add(new FileBlocks()
+                fileBlocks.Add(new FileBlock()
                 {
                     BlockHash = "BlockHash" + i,
                     BlockFileName = i.ToString(),

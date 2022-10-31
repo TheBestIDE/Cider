@@ -4,13 +4,13 @@ namespace Cider.Server.Data
 {
     public interface IServerDb
     {
-        public Files? GetFile(string fileName);
-        public void InsertFile(Files fb);
+        public Model.File? GetFile(string fileName);
+        public void InsertFile(Model.File fb);
         public void DeleteFile(string fileName);
         
-        public FileBlocks? GetBlock(string hash);
-        public void InsertBlock(FileBlocks fb);
-        public void InsertBlocks(IEnumerable<FileBlocks> fbs);
+        public FileBlock? GetBlock(string hash);
+        public void InsertBlock(FileBlock fb);
+        public void InsertBlocks(IEnumerable<FileBlock> fbs);
         public void DeleteBlock(string hash);
         public void DeleteBlocks(IEnumerable<string> hashs);
 

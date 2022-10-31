@@ -1,7 +1,7 @@
 
 namespace Cider.Server.Data.Model
 {
-    public class Files
+    public class File
     {
         /// <summary>文件名</summary>
         public string? FileName { get; set; }

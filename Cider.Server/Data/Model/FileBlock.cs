@@ -1,7 +1,7 @@
 
 namespace Cider.Server.Data.Model
 {
-    public class FileBlocks
+    public class FileBlock
     {
         public string? BlockHash { get; set; }
 
